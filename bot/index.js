@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import cors from "cors";
 import { Telegraf } from 'telegraf';
 import * as dotenv from 'dotenv';
 import csvParser from 'csv-parser';
@@ -42,6 +43,7 @@ function mapColumn(header) {
 }
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use("/webapp", express.static(path.join(__dirname, "webapp")));
 
@@ -274,8 +276,15 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
 
 // API для мини-приложения
 app.get("/api/products", async (req, res) => {
-  const { data: products } = await supabase.from('products').select('*').eq('is_visible', true);
-  res.json(products || []);
+  try {
+    const { data, error } = await supabase.from("products").select("*");
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(PORT, async () => {
