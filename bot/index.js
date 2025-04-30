@@ -3,10 +3,8 @@ import path from "path";
 import { Telegraf } from 'telegraf';
 import * as dotenv from 'dotenv';
 import csvParser from 'csv-parser';
-console.log('csv-parser успешно импортирован');
 import fetch from 'node-fetch';
 import { v4 as uuidv4 } from 'uuid';
-console.log('uuid успешно импортирован');
 import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
@@ -51,7 +49,7 @@ app.use("/webapp", express.static(path.join(__dirname, "webapp")));
 bot.start(async (ctx) => {
   const userId = ctx.from.id.toString();
   const { data: admins } = await supabase.from('admins').select('user_id');
-  const isAdmin = admins.some(admin => admin.user_id === userId);
+  const isAdmin = admins ? admins.some(admin => admin.user_id === userId) : false;
   
   const buttons = [
     [{ text: "Открыть магазин", web_app: { url: WEBAPP_URL } }]
@@ -75,7 +73,7 @@ bot.start(async (ctx) => {
 bot.action("admin_panel", async (ctx) => {
   const userId = ctx.from.id.toString();
   const { data: admins } = await supabase.from('admins').select('user_id');
-  if (!admins.some(admin => admin.user_id === userId)) {
+  if (!admins || !admins.some(admin => admin.user_id === userId)) {
     return ctx.reply("Доступ запрещен");
   }
 
@@ -101,7 +99,7 @@ bot.action("parse_products", (ctx) => {
 bot.on("document", async (ctx) => {
   const userId = ctx.from.id.toString();
   const { data: admins } = await supabase.from('admins').select('user_id');
-  if (!admins.some(admin => admin.user_id === userId)) return;
+  if (!admins || !admins.some(admin => admin.user_id === userId)) return;
 
   try {
     const file = await ctx.telegram.getFile(ctx.message.document.file_id);
@@ -169,7 +167,7 @@ bot.action("edit_products", (ctx) => {
 bot.on("text", async (ctx) => {
   const userId = ctx.from.id.toString();
   const { data: admins } = await supabase.from('admins').select('user_id');
-  if (!admins.some(admin => admin.user_id === userId)) return;
+  if (!admins || !admins.some(admin => admin.user_id === userId)) return;
 
   const text = ctx.message.text;
   if (text.startsWith("edit")) {
@@ -263,7 +261,7 @@ bot.action("view_products", async (ctx) => {
   }
 
   const productList = products.map(p => 
-    `ID: ${p.id}\nНазвание: ${p.name}\nЦена: ${p.price} ₽\nКатегория: ${p.category}\nОстаток: ${p.stock}\nТеги: ${p.tags.join(", ")}\nВидимость: ${p.is_visible ? "вкл   вкл" : "выкл"}`
+    `ID: ${p.id}\nНазвание: ${p.name}\nЦена: ${p.price} ₽\nКатегория: ${p.category}\nОстаток: ${p.stock}\nТеги: ${p.tags.join(", ")}\nВидимость: ${p.is_visible ? "вкл" : "выкл"}`
   ).join("\n\n");
   
   ctx.reply(productList);
@@ -291,3 +289,7 @@ app.listen(PORT, async () => {
     console.error("Ошибка установки webhook:", err);
   }
 });
+
+// Тестовый импорт зависимостей
+console.log('csv-parser успешно импортирован');
+console.log('uuid успешно импортирован');
