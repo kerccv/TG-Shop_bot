@@ -8,15 +8,16 @@
 ## ⚙️ Установка и запуск
 
 # Требования
--Node.js v16+
--npm или yarn
--Telegram Bot Token (получить у @BotFather)
+1. Node.js v16+
+2. npm или yarn
+3. Telegram Bot Token (получить у @BotFather)
 
 # 1. Клонирование и установка зависимостей
-bash
+   ```bash
 git clone https://github.com/kerccv/TG-Shop_bot.git
 cd TG-Shop_bot
 npm install  # или yarn install
+   ```
 
 # 2. Настройка конфигурации
 Создайте файл .env в корне проекта и заполните по образцу:
@@ -30,18 +31,19 @@ ADMIN_IDS=айди_админов
 SUPABASE_KEY=секретный_ключ_supabase
 
 # 3. Создание проэкта на supabase (если хост render.com то ещё и его)
--Настройка supabase:
+1. Настройка supabase:
   1) Создайте проэкт, добавляете пароль.
-  2) Создайте таблицы:
-     1. admins
-     2. products
--Настройка render:
+  2) Создайте таблицы admins, products
+     
+2. Настройка render:
   1) Создайте новый Web Service
   2) Укажите свой репозиторий
-  3) Параметры:
-     1. Build Command
-     bash
+Build Command:
+```bash
      cd bot && npm install
-     2. Start Command
-     bash
+   ```
+
+Start Command
+        ```bash
      node bot/index.js
+        ```
