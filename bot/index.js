@@ -1,8 +1,7 @@
 import express from "express";
 import path from "path";
-import { Telegraf } from "telegraf";
-import dotenv from "dotenv";
-
+import { Telegraf } from 'telegraf';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
