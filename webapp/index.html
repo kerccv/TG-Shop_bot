@@ -1,12 +1,115 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Магазин</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div id="root">Загрузка...</div>
-    <script src="script.js"></script>
-  </body>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Магазин постельного белья</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/Babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    function App() {
+      const [products, setProducts] = React.useState([]);
+      const [sortBy, setSortBy] = React.useState('relevance');
+      const [search, setSearch] = React.useState('');
+      const [category, setCategory] = React.useState('all');
+      const [cart, setCart] = React.useState([]);
+
+      React.useEffect(() => {
+        fetch('/api/products')
+          .then(res => res.json())
+          .then(data => setProducts(data));
+      }, []);
+
+      const filteredProducts = products
+        .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+        .filter(p => category === 'all' || p.category === category)
+        .sort((a, b) => {
+          if (sortBy === 'price') return a.price - b.price;
+          if (sortBy === 'popularity') return b.stock - a.stock;
+          return 0;
+        });
+
+      const categories = ['all', ...new Set(products.map(p => p.category))];
+
+      const addToCart = (product) => {
+        setCart([...cart, product]);
+      };
+
+      return (
+        <div className="container mx-auto p-4">
+          <h1 className="text-2xl font-bold mb-4">Магазин постельного белья</h1>
+          
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Поиск товаров..."
+              className="w-full p-2 border rounded"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-4 mb-4">
+            <select
+              className="p-2 border rounded"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="relevance">По релевантности</option>
+              <option value="price">По цене</option>
+              <option value="popularity">По популярности</option>
+            </select>
+
+            <select
+              className="p-2 border rounded"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {filteredProducts.map(product => (
+              <div key={product.id} className="border p-4 rounded shadow">
+                <img src={product.image_url} alt={product.name} className="w-full h-48 object-cover mb-2" />
+                <h3 className="font-bold">{product.name}</h3>
+                <p className="text-gray-600">{product.description}</p>
+                <p className="font-semibold">{product.price} грн</p>
+                <p className="text-sm">В наличии: {product.stock}</p>
+                <p className="text-sm">Теги: {product.tags.join(", ")}</p>
+                <button 
+                  className="mt-2 bg-blue-500 text-white p-2 rounded w-full"
+                  onClick={() => addToCart(product)}
+                >
+                  Добавить в корзину
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {cart.length > 0 && (
+            <div className="mt-4 p-4 border rounded">
+              <h2 className="text-xl font-bold">Корзина ({cart.length})</h2>
+              <ul>
+                {cart.map((item, index) => (
+                  <li key={index}>{item.name} - {item.price} ₽</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
 </html>
