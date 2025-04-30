@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 10000;
 const __dirname = path.resolve();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const WEBAPP_URL = process.env.WEBAPP_URL;
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://lavandershopsite.onrender.com/webapp/index.html';
 
 // Инициализация Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -48,26 +48,56 @@ function mapColumn(header) {
   return null;
 }
 
+// Проверка таблицы и RLS
+async function checkTable(tableName) {
+  try {
+    const { data, error } = await supabase.from(tableName).select('*').limit(1);
+    if (error) {
+      console.error(`Error checking table ${tableName}:`, error);
+      if (error.message.includes('RLS')) {
+        console.warn(`RLS policy violation for table ${tableName}. Check RLS settings and policies.`);
+      }
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(`Unexpected error checking table ${tableName}:`, err);
+    return false;
+  }
+}
+
 // Команда /start
 bot.start(async (ctx) => {
   const userId = ctx.from.id.toString();
   let isAdmin = false;
 
   try {
-    const { data: admins, error } = await supabase.from('admins').select('user_id');
-    if (error) {
-      console.error('Supabase error in /start:', error);
-      ctx.reply('❌ Ошибка сервера, попробуйте позже');
-      return;
+    // Заглушка для админов из ADMIN_IDS
+    const adminIdsFromEnv = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
+    if (adminIdsFromEnv.includes(userId)) {
+      isAdmin = true;
+      console.log('Admin access granted via ADMIN_IDS:', userId);
     }
-    console.log('User ID:', userId);
-    console.log('Admins from Supabase:', admins);
-    isAdmin = admins ? admins.some(admin => admin.user_id === userId) : false;
-    console.log('Is Admin:', isAdmin);
+
+    // Проверка таблицы admins
+    const tableExists = await checkTable('admins');
+    if (!tableExists) {
+      console.warn('Admins table is inaccessible or RLS is not configured');
+    } else {
+      const { data: admins, error } = await supabase.from('admins').select('user_id');
+      if (error) {
+        console.error('Supabase error in /start:', error);
+        ctx.reply('❌ Ошибка проверки админа, но доступ предоставлен по ID');
+      } else {
+        console.log('User ID:', userId);
+        console.log('Admins from Supabase:', admins);
+        isAdmin = isAdmin || (admins && admins.some(admin => admin.user_id === userId));
+        console.log('Is Admin:', isAdmin);
+      }
+    }
   } catch (err) {
     console.error('Unexpected error in /start:', err);
-    ctx.reply('❌ Ошибка сервера, попробуйте позже');
-    return;
+    ctx.reply('❌ Ошибка сервера, но доступ предоставлен по ID');
   }
 
   const buttons = [
@@ -92,12 +122,20 @@ bot.start(async (ctx) => {
 bot.action("admin_panel", async (ctx) => {
   const userId = ctx.from.id.toString();
   try {
-    const { data: admins, error } = await supabase.from('admins').select('user_id');
-    if (error) {
-      console.error('Supabase error in admin_panel:', error);
-      return ctx.reply('❌ Ошибка сервера');
+    const adminIdsFromEnv = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
+    let isAdmin = adminIdsFromEnv.includes(userId);
+
+    const tableExists = await checkTable('admins');
+    if (tableExists) {
+      const { data: admins, error } = await supabase.from('admins').select('user_id');
+      if (error) {
+        console.error('Supabase error in admin_panel:', error);
+      } else if (admins) {
+        isAdmin = isAdmin || admins.some(admin => admin.user_id === userId);
+      }
     }
-    if (!admins || !admins.some(admin => admin.user_id === userId)) {
+
+    if (!isAdmin) {
       return ctx.reply("🚫 Доступ запрещён");
     }
 
@@ -133,9 +171,20 @@ bot.action("parse_products", (ctx) => {
 bot.on("document", async (ctx) => {
   const userId = ctx.from.id.toString();
   try {
-    const { data: admins, error } = await supabase.from('admins').select('user_id');
-    if (error || !admins || !admins.some(admin => admin.user_id === userId)) {
-      console.error('Supabase error or not admin:', error);
+    const adminIdsFromEnv = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
+    let isAdmin = adminIdsFromEnv.includes(userId);
+
+    const tableExists = await checkTable('admins');
+    if (tableExists) {
+      const { data: admins, error } = await supabase.from('admins').select('user_id');
+      if (error) {
+        console.error('Supabase error in document handler:', error);
+      } else if (admins) {
+        isAdmin = isAdmin || admins.some(admin => admin.user_id === userId);
+      }
+    }
+
+    if (!isAdmin) {
       return;
     }
 
@@ -208,9 +257,20 @@ bot.on("text", async (ctx) => {
   const text = ctx.message.text;
 
   try {
-    const { data: admins, error } = await supabase.from('admins').select('user_id');
-    if (error || !admins || !admins.some(admin => admin.user_id === userId)) {
-      console.error('Supabase error or not admin:', error);
+    const adminIdsFromEnv = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
+    let isAdmin = adminIdsFromEnv.includes(userId);
+
+    const tableExists = await checkTable('admins');
+    if (tableExists) {
+      const { data: admins, error } = await supabase.from('admins').select('user_id');
+      if (error) {
+        console.error('Supabase error in text handler:', error);
+      } else if (admins) {
+        isAdmin = isAdmin || admins.some(admin => admin.user_id === userId);
+      }
+    }
+
+    if (!isAdmin) {
       return;
     }
 
