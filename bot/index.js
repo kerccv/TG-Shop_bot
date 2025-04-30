@@ -3,8 +3,10 @@ import path from "path";
 import { Telegraf } from 'telegraf';
 import * as dotenv from 'dotenv';
 import csvParser from 'csv-parser';
+console.log('csv-parser успешно импортирован');
 import fetch from 'node-fetch';
 import { v4 as uuidv4 } from 'uuid';
+console.log('uuid успешно импортирован');
 import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
