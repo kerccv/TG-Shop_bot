@@ -1,4 +1,3 @@
-// webapp/server.js
 const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
@@ -11,10 +10,8 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-// Разрешить кросс-доменные запросы (CORS)
 app.use(cors());
 
-// Эндпоинт для получения товаров
 app.get("/api/products", async (req, res) => {
   try {
     const { data, error } = await supabase.from("products").select("*");
@@ -27,7 +24,6 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
-// Запуск сервера
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

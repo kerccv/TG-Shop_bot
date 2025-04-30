@@ -1,10 +1,11 @@
 (async () => {
-  const res = await fetch("https://your_project.supabase.co/rest/v1/products", {
+  const res = await fetch("https://viwzvkqjypybmullgwke.supabase.com/rest/v1/products", {
     headers: {
-      apikey: "your_anon_key_here",
-      Authorization: "Bearer your_anon_key_here",
+      apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpd3p2a3FqeXB5Ym11bGxnd2tlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU5NDczNDQsImV4cCI6MjA2MTUyMzM0NH0.rhoS0U4Jqv-2Fynv5FagBxpp4aZbuRWp9lJcgozIqOY",
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpd3p2a3FqeXB5Ym11bGxnd2tlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU5NDczNDQsImV4cCI6MjA2MTUyMzM0NH0.rhoS0U4Jqv-2Fynv5FagBxpp4aZbuRWp9lJcgozIqOY"
     }
   });
+  
   const data = await res.json();
 
   const root = document.getElementById("root");
