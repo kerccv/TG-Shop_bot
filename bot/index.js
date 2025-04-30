@@ -20,7 +20,13 @@ const WEBAPP_URL = process.env.WEBAPP_URL;
 // Инициализация Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Словарь синонимов для распознавания столбцов
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use("/webapp", express.static(path.join(__dirname, "webapp")));
+app.use("/public", express.static(path.join(__dirname, "public")));
+
+// Словарь синонимов для парсера CSV
 const columnSynonyms = {
   name: ['name', 'title', 'product_name', 'item', 'название', 'имя', 'продукт', 'товар'],
   price: ['price', 'cost', 'value', 'цена', 'стоимость'],
@@ -31,7 +37,7 @@ const columnSynonyms = {
   tags: ['tags', 'labels', 'keywords', 'теги', 'метки', 'ключевые_слова']
 };
 
-// Функция для сопоставления заголовков столбцов
+// Функция для сопоставления заголовков CSV
 function mapColumn(header) {
   const cleanHeader = header.toLowerCase().replace(/[_-\s]/g, '');
   for (const [field, synonyms] of Object.entries(columnSynonyms)) {
@@ -42,21 +48,32 @@ function mapColumn(header) {
   return null;
 }
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use("/webapp", express.static(path.join(__dirname, "webapp")));
-
 // Команда /start
 bot.start(async (ctx) => {
   const userId = ctx.from.id.toString();
-  const { data: admins } = await supabase.from('admins').select('user_id');
-  const isAdmin = admins ? admins.some(admin => admin.user_id === userId) : false;
-  
+  let isAdmin = false;
+
+  try {
+    const { data: admins, error } = await supabase.from('admins').select('user_id');
+    if (error) {
+      console.error('Supabase error in /start:', error);
+      ctx.reply('❌ Ошибка сервера, попробуйте позже');
+      return;
+    }
+    console.log('User ID:', userId);
+    console.log('Admins from Supabase:', admins);
+    isAdmin = admins ? admins.some(admin => admin.user_id === userId) : false;
+    console.log('Is Admin:', isAdmin);
+  } catch (err) {
+    console.error('Unexpected error in /start:', err);
+    ctx.reply('❌ Ошибка сервера, попробуйте позже');
+    return;
+  }
+
   const buttons = [
     [{ text: "🛒 Открыть магазин", web_app: { url: WEBAPP_URL } }]
   ];
-  
+
   if (isAdmin) {
     buttons.push([{ text: "🔑 Админ-панель", callback_data: "admin_panel" }]);
   }
@@ -74,42 +91,54 @@ bot.start(async (ctx) => {
 // Админ-панель
 bot.action("admin_panel", async (ctx) => {
   const userId = ctx.from.id.toString();
-  const { data: admins } = await supabase.from('admins').select('user_id');
-  if (!admins || !admins.some(admin => admin.user_id === userId)) {
-    return ctx.reply("🚫 Доступ запрещён");
-  }
-
-  ctx.reply("🔑 Админ-панель:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "📦 Парсер товаров", callback_data: "parse_products" },
-          { text: "✏️ Редактировать товары", callback_data: "edit_products" }
-        ],
-        [
-          { text: "👁️ Управление видимостью", callback_data: "toggle_visibility" },
-          { text: "👤 Добавить админа", callback_data: "add_admin" }
-        ],
-        [
-          { text: "📋 Просмотреть товары", callback_data: "view_products" },
-          { text: "💰 Массовая наценка", callback_data: "bulk_price" }
-        ]
-      ]
+  try {
+    const { data: admins, error } = await supabase.from('admins').select('user_id');
+    if (error) {
+      console.error('Supabase error in admin_panel:', error);
+      return ctx.reply('❌ Ошибка сервера');
     }
-  });
+    if (!admins || !admins.some(admin => admin.user_id === userId)) {
+      return ctx.reply("🚫 Доступ запрещён");
+    }
+
+    ctx.reply("🔑 Админ-панель:", {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "📦 Парсер товаров", callback_data: "parse_products" },
+            { text: "✏️ Редактировать товары", callback_data: "edit_products" }
+          ],
+          [
+            { text: "👁️ Управление видимостью", callback_data: "toggle_visibility" },
+            { text: "👤 Добавить админа", callback_data: "add_admin" }
+          ],
+          [
+            { text: "📋 Просмотреть товары", callback_data: "view_products" },
+            { text: "💰 Массовая наценка", callback_data: "bulk_price" }
+          ]
+        ]
+      }
+    });
+  } catch (err) {
+    console.error('Unexpected error in admin_panel:', err);
+    ctx.reply('❌ Ошибка сервера');
+  }
 });
 
-// Парсер товаров из CSV
+// Парсер CSV
 bot.action("parse_products", (ctx) => {
   ctx.reply("📤 Отправьте CSV-файл с товарами. Бот распознает столбцы (например, name, price, description).");
 });
 
 bot.on("document", async (ctx) => {
   const userId = ctx.from.id.toString();
-  const { data: admins } = await supabase.from('admins').select('user_id');
-  if (!admins || !admins.some(admin => admin.user_id === userId)) return;
-
   try {
+    const { data: admins, error } = await supabase.from('admins').select('user_id');
+    if (error || !admins || !admins.some(admin => admin.user_id === userId)) {
+      console.error('Supabase error or not admin:', error);
+      return;
+    }
+
     const file = await ctx.telegram.getFile(ctx.message.document.file_id);
     const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${file.file_path}`;
     
@@ -150,39 +179,47 @@ bot.on("document", async (ctx) => {
       })
       .on('end', async () => {
         if (newProducts.length === 0) {
-          ctx.reply("⚠️ CSV-файл пуст или не содержит распознаваемых данных.");
+          ctx.reply("⚠️ CSV-файл пуст или не содержит данных.");
           return;
         }
 
         const { error } = await supabase.from('products').insert(newProducts);
         if (error) {
+          console.error('Supabase error inserting products:', error);
           ctx.reply("❌ Ошибка сохранения товаров: " + error.message);
         } else {
           ctx.reply(`✅ Добавлено ${newProducts.length} товаров! Используйте "Управление видимостью" для отображения.`);
         }
       });
   } catch (err) {
+    console.error('Error processing CSV:', err);
     ctx.reply("❌ Ошибка обработки файла: " + err.message);
   }
 });
 
 // Редактирование товаров
 bot.action("edit_products", (ctx) => {
-  ctx.reply("✏️ Введите: id,название,цена,описание,категория,остаток,теги (оставьте пустым для текущего значения)");
+  ctx.reply("✏️ Введите: edit,id,название,цена,описание,категория,остаток,теги (оставьте пустым для текущего значения)");
 });
 
+// Обработка текстовых команд
 bot.on("text", async (ctx) => {
   const userId = ctx.from.id.toString();
-  const { data: admins } = await supabase.from('admins').select('user_id');
-  if (!admins || !admins.some(admin => admin.user_id === userId)) return;
-
   const text = ctx.message.text;
-  if (text.startsWith("edit")) {
-    try {
+
+  try {
+    const { data: admins, error } = await supabase.from('admins').select('user_id');
+    if (error || !admins || !admins.some(admin => admin.user_id === userId)) {
+      console.error('Supabase error or not admin:', error);
+      return;
+    }
+
+    if (text.startsWith("edit")) {
       const [, id, name, price, description, category, stock, tags] = text.split(",");
-      const { data: product } = await supabase.from('products').select('*').eq('id', id).single();
+      const { data: product, error: fetchError } = await supabase.from('products').select('*').eq('id', id).single();
       
-      if (!product) {
+      if (fetchError || !product) {
+        console.error('Error fetching product:', fetchError);
         return ctx.reply("⚠️ Товар не найден");
       }
 
@@ -195,21 +232,24 @@ bot.on("text", async (ctx) => {
         tags: tags ? tags.split(/[;,\s]+/).filter(tag => tag) : product.tags
       };
 
-      const { error } = await supabase.from('products').update(updatedProduct).eq('id', id);
-      if (error) {
-        ctx.reply("❌ Ошибка обновления товара: " + error.message);
+      const { error: updateError } = await supabase.from('products').update(updatedProduct).eq('id', id);
+      if (updateError) {
+        console.error('Error updating product:', updateError);
+        ctx.reply("❌ Ошибка обновления товара: " + updateError.message);
       } else {
         ctx.reply("✅ Товар обновлён!");
       }
-    } catch (err) {
-      ctx.reply("❌ Ошибка: " + err.message);
-    }
-  } else if (text.startsWith("bulk")) {
-    try {
+    } else if (text.startsWith("bulk")) {
       const [, type, value] = text.split(",");
       const parsedValue = parseFloat(value);
 
-      const { data: products } = await supabase.from('products').select('*');
+      const { data: products, error: fetchError } = await supabase.from('products').select('*');
+      if (fetchError) {
+        console.error('Error fetching products:', fetchError);
+        ctx.reply("❌ Ошибка получения товаров: " + fetchError.message);
+        return;
+      }
+
       const updatedProducts = products.map(product => ({
         ...product,
         price: type === "percent"
@@ -217,36 +257,36 @@ bot.on("text", async (ctx) => {
           : product.price + parsedValue
       }));
 
-      const { error } = await supabase.from('products').upsert(updatedProducts);
-      if (error) {
-        ctx.reply("❌ Ошибка обновления цен: " + error.message);
+      const { error: updateError } = await supabase.from('products').upsert(updatedProducts);
+      if (updateError) {
+        console.error('Error updating prices:', updateError);
+        ctx.reply("❌ Ошибка обновления цен: " + updateError.message);
       } else {
         ctx.reply("✅ Цены обновлены!");
       }
-    } catch (err) {
-      ctx.reply("❌ Ошибка: " + err.message);
-    }
-  } else if (text.startsWith("visibility")) {
-    try {
+    } else if (text.startsWith("visibility")) {
       const [, id, state] = text.split(",");
       const isVisible = state.toLowerCase() === "true";
       
       const { error } = await supabase.from('products').update({ is_visible: isVisible }).eq('id', id);
       if (error) {
+        console.error('Error updating visibility:', error);
         ctx.reply("❌ Ошибка изменения видимости: " + error.message);
       } else {
         ctx.reply(`✅ Видимость товара ${id} установлена в ${isVisible ? "вкл" : "выкл"}`);
       }
-    } catch (err) {
-      ctx.reply("❌ Ошибка: " + err.message);
+    } else if (text.match(/^\d+$/)) {
+      const { error } = await supabase.from('admins').insert({ user_id: text });
+      if (error) {
+        console.error('Error adding admin:', error);
+        ctx.reply("❌ Ошибка добавления админа: " + error.message);
+      } else {
+        ctx.reply(`✅ Админ с ID ${text} добавлен!`);
+      }
     }
-  } else if (text.match(/^\d+$/)) {
-    const { error } = await supabase.from('admins').insert({ user_id: text });
-    if (error) {
-      ctx.reply("❌ Ошибка добавления админа: " + error.message);
-    } else {
-      ctx.reply(`✅ Админ с ID ${text} добавлен!`);
-    }
+  } catch (err) {
+    console.error('Unexpected error in text handler:', err);
+    ctx.reply('❌ Ошибка сервера');
   }
 });
 
@@ -262,16 +302,28 @@ bot.action("bulk_price", (ctx) => {
 
 // Просмотр товаров
 bot.action("view_products", async (ctx) => {
-  const { data: products } = await supabase.from('products').select('*');
-  if (!products || products.length === 0) {
-    return ctx.reply("⚠️ Товаров пока нет");
-  }
+  try {
+    const { data: products, error } = await supabase.from('products').select('*');
+    if (error) {
+      console.error('Error fetching products:', error);
+      ctx.reply("❌ Ошибка получения товаров: " + error.message);
+      return;
+    }
 
-  const productList = products.map(p => 
-    `📌 ID: ${p.id}\nНазвание: ${p.name}\nЦена: ${p.price} ₽\nКатегория: ${p.category}\nОстаток: ${p.stock}\nТеги: ${p.tags.join(", ") || "Нет тегов"}\nВидимость: ${p.is_visible ? "✅ Вкл" : "❌ Выкл"}`
-  ).join("\n\n");
-  
-  ctx.reply(productList);
+    if (!products || products.length === 0) {
+      ctx.reply("⚠️ Товаров пока нет");
+      return;
+    }
+
+    const productList = products.map(p => 
+      `📌 ID: ${p.id}\nНазвание: ${p.name}\nЦена: ${p.price} ₽\nКатегория: ${p.category}\nОстаток: ${p.stock}\nТеги: ${p.tags.join(", ") || "Нет тегов"}\nВидимость: ${p.is_visible ? "✅ Вкл" : "❌ Выкл"}`
+    ).join("\n\n");
+    
+    ctx.reply(productList);
+  } catch (err) {
+    console.error('Unexpected error in view_products:', err);
+    ctx.reply('❌ Ошибка сервера');
+  }
 });
 
 // Webhook
@@ -279,22 +331,33 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
   bot.handleUpdate(req.body, res);
 });
 
-// API для мини-приложения
+// API для веб-приложения
 app.get("/api/products", async (req, res) => {
   try {
     const { data, error } = await supabase.from("products").select("*").eq('is_visible', true);
     if (error) {
+      console.error('Supabase error in /api/products:', error);
       return res.status(500).json({ error: error.message });
     }
     res.json(data || []);
   } catch (err) {
+    console.error('Unexpected error in /api/products:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Тестовое подключение к Supabase
+app.get("/test-supabase", async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('admins').select('user_id');
+    res.json({ data, error });
+  } catch (err) {
+    res.json({ error: err.message });
   }
 });
 
 app.listen(PORT, async () => {
   console.log(`Сервер запущен на порту ${PORT}`);
-
   try {
     const webhookUrl = `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/bot${process.env.BOT_TOKEN}`;
     await bot.telegram.setWebhook(webhookUrl);
@@ -303,7 +366,3 @@ app.listen(PORT, async () => {
     console.error("Ошибка установки webhook:", err);
   }
 });
-
-// Тестовый импорт зависимостей
-console.log('csv-parser успешно импортирован');
-console.log('uuid успешно импортирован');
