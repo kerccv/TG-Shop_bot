@@ -1,0 +1,17 @@
+
+body {
+  font-family: sans-serif;
+  background: #f7f7f7;
+}
+
+input {
+  border-radius: 8px;
+}
+
+.card {
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
