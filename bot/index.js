@@ -1,54 +1,47 @@
-require('dotenv').config();
-const express = require('express');
-const { Telegraf } = require('telegraf');
-const { createClient } = require('@supabase/supabase-js');
+import express from "express";
+import path from "path";
+import { Telegraf } from "telegraf";
+import dotenv from "dotenv";
 
-const {
-  BOT_TOKEN,
-  SUPABASE_URL,
-  SUPABASE_KEY,
-  ADMIN_IDS,
-  WEBAPP_URL,
-} = process.env;
+dotenv.config();
 
-const bot = new Telegraf(BOT_TOKEN);
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = express();
 const PORT = process.env.PORT || 10000;
+const __dirname = path.resolve();
 
-app.use(express.json());
-app.use(express.static('webapp'));
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const WEBAPP_URL = process.env.WEBAPP_URL;
 
-app.post(`/bot${BOT_TOKEN}`, (req, res) => {
-  bot.handleUpdate(req.body, res).catch(err => {
-    console.error('Ошибка в handleUpdate:', err);
-    res.sendStatus(500);
-  });
-});
-
-bot.command('start', (ctx) => {
-  ctx.reply('Добро пожаловать! Открой мини-приложение:', {
+bot.start((ctx) => {
+  ctx.reply("Добро пожаловать! Открой мини-приложение:", {
     reply_markup: {
-      inline_keyboard: [[
-        {
-          text: '🛍 Перейти в магазин',
-          web_app: { url: WEBAPP_URL }
-        }
-      ]]
+      inline_keyboard: [
+        [
+          {
+            text: "Открыть магазин",
+            web_app: { url: WEBAPP_URL }
+          }
+        ]
+      ]
     }
   });
 });
 
+app.use("/webapp", express.static(path.join(__dirname, "webapp")));
+
+app.use(express.json());
+app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
+  bot.handleUpdate(req.body, res);
+});
+
 app.listen(PORT, async () => {
-  const baseUrl = 'https://tg-shop-bot-gw2h.onrender.com';
-  const webhookUrl = `${baseUrl}/bot${BOT_TOKEN}`;
+  console.log(`Сервер запущен на порту ${PORT}`);
 
   try {
+    const webhookUrl = `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/bot${process.env.BOT_TOKEN}`;
     await bot.telegram.setWebhook(webhookUrl);
-    console.log('Webhook установлен:', webhookUrl);
+    console.log("Webhook установлен:", webhookUrl);
   } catch (err) {
-    console.error('Ошибка установки webhook:', err);
+    console.error("Ошибка установки webhook:", err);
   }
-
-  console.log(`Сервер запущен на порту ${PORT}`);
 });
