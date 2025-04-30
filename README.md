@@ -22,20 +22,20 @@ npm install  # или yarn install
 # 2. Настройка конфигурации
 Создайте файл .env в корне проекта и заполните по образцу:
 
-ini
+   ```ini
 WEBAPP_URL=url_вашего_веб-приложения
 RENDER_EXTERNAL_HOSTNAME=url_хоста(в моём случае render.com)
 BOT_TOKEN=token_бота
 SUPABASE_URL=url_supabase
 ADMIN_IDS=айди_админов
 SUPABASE_KEY=секретный_ключ_supabase
-
+   ```
 # 3. Создание проэкта на supabase (если хост render.com то ещё и его)
-1. Настройка supabase:
+# Настройка supabase:
   1) Создайте проэкт, добавляете пароль.
   2) Создайте таблицы admins, products
      
-2. Настройка render:
+# Настройка render:
   1) Создайте новый Web Service
   2) Укажите свой репозиторий
 Build Command:
@@ -44,6 +44,6 @@ Build Command:
    ```
 
 Start Command
-        ```bash
+ ```bash
      node bot/index.js
-        ```
+  ```
