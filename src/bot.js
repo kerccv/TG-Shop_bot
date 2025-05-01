@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { parseCSV } from "./csvParser.js";
-import { updateProduct, bulkUpdatePrices, toggleProductVisibility, addAdmin, getAllProducts, resetProductsCache } from "./supabase.js";
+import { updateProduct, bulkUpdatePrices, toggleProductVisibility, addAdmin, getAllProducts, resetProductsCache, isAdminUser } from "./supabase.js";
 import { logger } from "./utils.js";
 
 // Инициализация бота
@@ -12,12 +12,9 @@ bot.start(async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received /start command", { userId });
 
-  // Проверяем админ-права через ADMIN_IDS
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-  logger.info("Admin check completed", { userId, isAdmin, adminIdsFromEnv });
+  // Проверяем админ-права
+  const isAdmin = await isAdminUser(userId);
+  logger.info("Admin check completed", { userId, isAdmin });
 
   // Inline-кнопка "Открыть магазин" для всех пользователей
   const inlineButtons = [[{ text: "🛒 Открыть магазин", web_app: { url: WEBAPP_URL } }]];
@@ -75,11 +72,7 @@ bot.hears("📦 Парсер товаров", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received parse_products command", { userId });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for parse_products", { userId });
     return;
@@ -98,11 +91,7 @@ bot.on("document", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received document", { userId });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for document upload", { userId });
     return;
@@ -141,11 +130,7 @@ bot.hears("✏️ Редактировать товары", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received edit_products command", { userId });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for edit_products", { userId });
     return;
@@ -153,7 +138,7 @@ bot.hears("✏️ Редактировать товары", async (ctx) => {
 
   try {
     await ctx.reply(
-      "✏️ Введите: edit,id,название,цена,описание,категория,остаток,теги (оставьте пустым для текущего значения)\nПример: edit,123,Простыня,1500,Белая простыня,постель,10,хлопок"
+      "✏️ Введите: id,название,цена,описание,категория,остаток,теги (оставьте пустым для текущего значения)\nПример: 123,Простыня,1500,Белая простыня,постель,10,хлопок"
     );
   } catch (err) {
     logger.error("Error in edit_products", { error: err.message, userId });
@@ -166,11 +151,7 @@ bot.hears("👁️ Управление видимостью", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received toggle_visibility command", { userId });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for toggle_visibility", { userId });
     return;
@@ -189,11 +170,7 @@ bot.hears("👤 Добавить админа", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received add_admin command", { userId });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for add_admin", { userId });
     return;
@@ -212,11 +189,7 @@ bot.hears("📋 Просмотреть товары", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received view_products command", { userId });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for view_products", { userId });
     await ctx.reply("🚫 Доступ запрещён");
@@ -253,11 +226,7 @@ bot.hears("💰 Массовая наценка", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received bulk_price command", { userId });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for bulk_price", { userId });
     return;
@@ -277,19 +246,17 @@ bot.on("text", async (ctx) => {
   const text = ctx.message.text;
   logger.info("Received text message", { userId, text });
 
-  const adminIdsFromEnv = process.env.ADMIN_IDS
-    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
-    : [];
-  const isAdmin = adminIdsFromEnv.includes(userId);
-
+  const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for text command", { userId });
     return;
   }
 
   try {
-    if (text.startsWith("edit")) {
-      const [, id, name, price, description, category, stock, tags] = text.split(",");
+    // Проверяем формат команды редактирования (id,название,цена,...)
+    const editMatch = text.match(/^(\d+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*(?:(\d+),)?\s*(.*)?$/);
+    if (editMatch) {
+      const [, id, name, price, description, category, stock, tags] = editMatch;
       const updatedProduct = {
         name,
         price: price && !isNaN(parseFloat(price)) ? parseFloat(price) : undefined,
@@ -315,8 +282,11 @@ bot.on("text", async (ctx) => {
       logger.info("Visibility updated", { userId, id, isVisible });
     } else if (text.match(/^\d+$/)) {
       await addAdmin(text);
-      await ctx.reply(`✅ Админ с ID ${text} добавлен! Перезапустите бота с помощью /start`);
+      await ctx.reply(`✅ Админ с ID ${text} добавлен! Новый админ должен отправить /start`);
       logger.info("Admin added", { userId, newAdminId: text });
+    } else {
+      await ctx.reply("❌ Неверный формат команды. Используйте примеры из инструкций.");
+      logger.warn("Invalid command format", { userId, text });
     }
   } catch (err) {
     logger.error("Error in text handler", { error: err.message, userId, text });

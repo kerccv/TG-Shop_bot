@@ -68,6 +68,7 @@ export const isAdminUser = async (userId) => {
     : [];
   logger.info("Checking admin status", { userId, adminIdsFromEnv });
 
+  // Проверяем сначала в ADMIN_IDS
   if (adminIdsFromEnv.includes(userId)) {
     logger.info("Admin access granted via ADMIN_IDS", { userId });
     return true;
@@ -75,29 +76,23 @@ export const isAdminUser = async (userId) => {
 
   if (!SUPABASE_ENABLED) {
     logger.warn("Supabase check skipped", { userId });
-    throw new Error("Supabase disabled");
+    return false;
   }
 
   try {
-    const tableExists = await checkTable("admins");
-    if (!tableExists) {
-      logger.warn("Admins table is inaccessible", { userId });
-      throw new Error("Admins table inaccessible");
-    }
-
     const { data: admins, error } = await supabase.from("admins").select("user_id");
     if (error) {
       logger.error("Supabase error checking admins", { error: error.message, details: error.details, userId });
-      throw new Error(error.message);
+      return false;
     }
 
-    const adminList = admins.map(admin => admin.user_id);
-    const isAdmin = adminList.includes(userId);
+    const adminList = admins.map(admin => admin.user_id.toString());
+    const isAdmin = adminList.includes(userId.toString());
     logger.info("Supabase admin check result", { userId, isAdmin, adminList });
     return isAdmin;
   } catch (err) {
     logger.error("Error checking admin status", { error: err.message, userId });
-    throw err;
+    return false;
   }
 };
 
@@ -202,6 +197,18 @@ export const bulkUpdatePrices = async (type, value) => {
 // Управление видимостью
 export const toggleProductVisibility = async (id, isVisible) => {
   if (!SUPABASE_ENABLED) throw new Error("Supabase disabled");
+
+  // Проверяем, существует ли товар
+  const { data: product, error: fetchError } = await supabase
+    .from("products")
+    .select("id")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !product) {
+    logger.error("Error fetching product for visibility update", { error: fetchError?.message, details: fetchError?.details, id });
+    throw new Error("Товар не найден");
+  }
 
   const { error } = await supabase.from("products").update({ is_visible: isVisible }).eq("id", id);
   if (error) {
