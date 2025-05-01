@@ -5,7 +5,7 @@ import { logger } from "./utils.js";
 
 // Инициализация бота
 export const bot = new Telegraf(process.env.BOT_TOKEN);
-const WEBAPP_URL = process.env.WEBAPP_URL || "https://lavandershopsite.onrender.com/webapp/index.html";
+const WEBAPP_URL = process.env.WEBAPP_URL || "https://tg-shop-bot-gw2h.onrender.com/webapp/index.html";
 
 // Команда /start
 bot.start(async (ctx) => {
@@ -15,14 +15,19 @@ bot.start(async (ctx) => {
   let isAdmin = false;
   try {
     isAdmin = await isAdminUser(userId);
+    logger.info("Admin check completed", { userId, isAdmin });
   } catch (err) {
     logger.error("Error checking admin status", { error: err.message, userId });
     ctx.reply("❌ Ошибка сервера, но доступ предоставлен по ID");
+    isAdmin = process.env.ADMIN_IDS?.split(",").map(id => id.trim()).includes(userId) || false; // Временный обход
   }
 
   const buttons = [[{ text: "🛒 Открыть магазин", web_app: { url: WEBAPP_URL } }]];
   if (isAdmin) {
     buttons.push([{ text: "🔑 Админ-панель", callback_data: "admin_panel" }]);
+    logger.info("Admin panel button added", { userId });
+  } else {
+    logger.warn("Admin panel button not added", { userId });
   }
 
   await ctx.reply("✨ Добро пожаловать в магазин постельного белья! Выберите действие:", {
@@ -39,6 +44,7 @@ bot.action("admin_panel", async (ctx) => {
   let isAdmin = false;
   try {
     isAdmin = await isAdminUser(userId);
+    logger.info("Admin check for admin_panel", { userId, isAdmin });
   } catch (err) {
     logger.error("Error checking admin status in admin_panel", { error: err.message, userId });
     return ctx.reply("❌ Ошибка сервера");

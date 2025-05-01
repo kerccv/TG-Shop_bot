@@ -14,6 +14,7 @@ logger.info("Supabase configuration", {
   SUPABASE_ENABLED,
   SUPABASE_URL: process.env.SUPABASE_URL ? "Set" : "Not set",
   SUPABASE_KEY: process.env.SUPABASE_KEY ? "Set" : "Not set",
+  ADMIN_IDS: process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(",").map(id => id.trim()) : "Not set",
 });
 
 // Инициализация Supabase
@@ -65,6 +66,8 @@ export const isAdminUser = async (userId) => {
   const adminIdsFromEnv = process.env.ADMIN_IDS
     ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
     : [];
+  logger.info("Checking admin status", { userId, adminIdsFromEnv });
+
   if (adminIdsFromEnv.includes(userId)) {
     logger.info("Admin access granted via ADMIN_IDS", { userId });
     return true;
@@ -88,8 +91,9 @@ export const isAdminUser = async (userId) => {
       throw new Error(error.message);
     }
 
-    const isAdmin = admins && admins.some((admin) => admin.user_id === userId);
-    logger.info("Supabase admin check result", { userId, isAdmin });
+    const adminList = admins.map(admin => admin.user_id);
+    const isAdmin = adminList.includes(userId);
+    logger.info("Supabase admin check result", { userId, isAdmin, adminList });
     return isAdmin;
   } catch (err) {
     logger.error("Error checking admin status", { error: err.message, userId });
