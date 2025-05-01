@@ -9,12 +9,19 @@ dotenv.config();
 
 const SUPABASE_ENABLED = process.env.SUPABASE_ENABLED === "true";
 
+// Логирование переменных окружения (без ключей для безопасности)
+logger.info("Supabase configuration", {
+  SUPABASE_ENABLED,
+  SUPABASE_URL: process.env.SUPABASE_URL ? "Set" : "Not set",
+  SUPABASE_KEY: process.env.SUPABASE_KEY ? "Set" : "Not set",
+});
+
 // Инициализация Supabase
 const supabase = SUPABASE_ENABLED
   ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, {
       fetch: (url, options) =>
         fetch(url, { ...options, timeout: 5000 }).catch((err) => {
-          logger.error("Supabase fetch failed", { error: err.message });
+          logger.error("Supabase fetch failed", { error: err.message, url });
           throw err;
         }),
     })
@@ -33,9 +40,10 @@ const checkTable = async (tableName) => {
     async () => {
       const { data, error } = await supabase.from(tableName).select("*").limit(1);
       if (error) {
-        logger.error(`Error checking table ${tableName}`, { error });
+        logger.error(`Error checking table ${tableName}`, { error: error.message, details: error.details });
         throw new Error(error.message);
       }
+      logger.info(`Table ${tableName} check successful`, { rowCount: data?.length || 0 });
       return !!data;
     },
     {
@@ -70,13 +78,13 @@ export const isAdminUser = async (userId) => {
   try {
     const tableExists = await checkTable("admins");
     if (!tableExists) {
-      logger.warn("Admins table is inaccessible or RLS is not configured", { userId });
+      logger.warn("Admins table is inaccessible", { userId });
       throw new Error("Admins table inaccessible");
     }
 
     const { data: admins, error } = await supabase.from("admins").select("user_id");
     if (error) {
-      logger.error("Supabase error checking admins", { error, userId });
+      logger.error("Supabase error checking admins", { error: error.message, details: error.details, userId });
       throw new Error(error.message);
     }
 
@@ -101,7 +109,7 @@ export const getVisibleProducts = async () => {
 
   const { data, error } = await supabase.from("products").select("*").eq("is_visible", true);
   if (error) {
-    logger.error("Supabase error fetching visible products", { error });
+    logger.error("Supabase error fetching visible products", { error: error.message, details: error.details });
     throw new Error(error.message);
   }
 
@@ -124,7 +132,7 @@ export const getAllProducts = async () => {
 
   const { data, error } = await supabase.from("products").select("*");
   if (error) {
-    logger.error("Supabase error fetching all products", { error });
+    logger.error("Supabase error fetching all products", { error: error.message, details: error.details });
     throw new Error(error.message);
   }
   return data || [];
@@ -141,7 +149,7 @@ export const updateProduct = async (id, updates) => {
     .single();
 
   if (fetchError || !product) {
-    logger.error("Error fetching product for update", { error: fetchError, id });
+    logger.error("Error fetching product for update", { error: fetchError?.message, details: fetchError?.details, id });
     throw new Error("Товар не найден");
   }
 
@@ -156,7 +164,7 @@ export const updateProduct = async (id, updates) => {
 
   const { error: updateError } = await supabase.from("products").update(updatedProduct).eq("id", id);
   if (updateError) {
-    logger.error("Error updating product", { error: updateError, id });
+    logger.error("Error updating product", { error: updateError.message, details: updateError.details, id });
     throw new Error(updateError.message);
   }
 
@@ -169,7 +177,7 @@ export const bulkUpdatePrices = async (type, value) => {
 
   const { data: products, error: fetchError } = await supabase.from("products").select("*");
   if (fetchError) {
-    logger.error("Error fetching products for bulk update", { error: fetchError });
+    logger.error("Error fetching products for bulk update", { error: fetchError.message, details: fetchError.details });
     throw new Error(fetchError.message);
   }
 
@@ -180,7 +188,7 @@ export const bulkUpdatePrices = async (type, value) => {
 
   const { error: updateError } = await supabase.from("products").upsert(updatedProducts);
   if (updateError) {
-    logger.error("Error updating prices in bulk", { error: updateError });
+    logger.error("Error updating prices in bulk", { error: updateError.message, details: updateError.details });
     throw new Error(updateError.message);
   }
 
@@ -193,7 +201,7 @@ export const toggleProductVisibility = async (id, isVisible) => {
 
   const { error } = await supabase.from("products").update({ is_visible: isVisible }).eq("id", id);
   if (error) {
-    logger.error("Error updating visibility", { error, id });
+    logger.error("Error updating visibility", { error: error.message, details: error.details, id });
     throw new Error(error.message);
   }
 
@@ -206,7 +214,7 @@ export const addAdmin = async (userId) => {
 
   const { error } = await supabase.from("admins").insert({ user_id: userId });
   if (error) {
-    logger.error("Error adding admin", { error, newAdminId: userId });
+    logger.error("Error adding admin", { error: error.message, details: error.details, newAdminId: userId });
     throw new Error(error.message);
   }
 };
@@ -217,7 +225,7 @@ export const testSupabaseConnection = async () => {
 
   const { data, error } = await supabase.from("admins").select("user_id");
   if (error) {
-    logger.error("Supabase error in test connection", { error });
+    logger.error("Supabase error in test connection", { error: error.message, details: error.details });
     throw new Error(error.message);
   }
   return { data, error };
