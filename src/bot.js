@@ -19,12 +19,15 @@ bot.start(async (ctx) => {
   const isAdmin = adminIdsFromEnv.includes(userId);
   logger.info("Admin check completed", { userId, isAdmin, adminIdsFromEnv });
 
-  const buttons = [[{ text: "🛒 Открыть магазин", web_app: { url: WEBAPP_URL } }]];
-  let replyMarkup = { inline_keyboard: buttons };
+  // Inline-кнопка "Открыть магазин" для всех пользователей
+  const inlineButtons = [[{ text: "🛒 Открыть магазин", web_app: { url: WEBAPP_URL } }]];
+
+  // Reply Keyboard для админов
+  let replyMarkup = { inline_keyboard: inlineButtons };
 
   if (isAdmin) {
-    // Добавляем Reply Keyboard для админов
     replyMarkup = {
+      inline_keyboard: inlineButtons,
       keyboard: [
         ["📦 Парсер товаров", "✏️ Редактировать товары"],
         ["👁️ Управление видимостью", "👤 Добавить админа"],
