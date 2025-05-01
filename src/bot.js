@@ -1,11 +1,11 @@
 import { Telegraf } from "telegraf";
 import { parseCSV } from "./csvParser.js";
-import { isAdminUser, updateProduct, bulkUpdatePrices, toggleProductVisibility, addAdmin, getAllProducts } from "./supabase.js";
+import { isAdminUser, updateProduct, bulkUpdatePrices, toggleProductVisibility, addAdmin, getAllProducts, resetProductsCache } from "./supabase.js";
 import { logger } from "./utils.js";
 
 // Инициализация бота
 export const bot = new Telegraf(process.env.BOT_TOKEN);
-const WEBAPP_URL = process.env.WEBAPP_URL;
+const WEBAPP_URL = process.env.WEBAPP_URL || "https://lavandershopsite.onrender.com/webapp/index.html";
 
 // Команда /start
 bot.start(async (ctx) => {

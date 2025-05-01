@@ -10,7 +10,7 @@ import { getVisibleProducts, testSupabaseConnection } from "./supabase.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 10000; // Используем PORT из окружения
 const __dirname = path.resolve();
 
 // Middleware
