@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { parseCSV } from "./csvParser.js";
-import { isAdminUser, updateProduct, bulkUpdatePrices, toggleProductVisibility, addAdmin, getAllProducts, resetProductsCache } from "./supabase.js";
+import { updateProduct, bulkUpdatePrices, toggleProductVisibility, addAdmin, getAllProducts, resetProductsCache } from "./supabase.js";
 import { logger } from "./utils.js";
 
 // Инициализация бота
@@ -20,18 +20,30 @@ bot.start(async (ctx) => {
   logger.info("Admin check completed", { userId, isAdmin, adminIdsFromEnv });
 
   const buttons = [[{ text: "🛒 Открыть магазин", web_app: { url: WEBAPP_URL } }]];
+  let replyMarkup = { inline_keyboard: buttons };
 
   if (isAdmin) {
-    buttons.push([{ text: "🔑 Админ-панель", callback_data: "admin_panel" }]);
-    logger.info("Admin panel button added", { userId });
-  } else {
-    logger.warn("Admin panel button not added", { userId });
+    // Добавляем Reply Keyboard для админов
+    replyMarkup = {
+      keyboard: [
+        ["📦 Парсер товаров", "✏️ Редактировать товары"],
+        ["👁️ Управление видимостью", "👤 Добавить админа"],
+        ["📋 Просмотреть товары", "💰 Массовая наценка"],
+        ["⬅️ Скрыть меню"],
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: false,
+    };
+    logger.info("Admin reply keyboard added", { userId });
   }
 
   try {
     await ctx.reply("✨ Добро пожаловать в магазин постельного белья! Выберите действие:", {
-      reply_markup: { inline_keyboard: buttons },
+      reply_markup: replyMarkup,
     });
+    if (isAdmin) {
+      await ctx.reply("🔑 Вы админ! Используйте кнопки ниже для управления магазином.");
+    }
     logger.info("Sent /start response", { userId, isAdmin });
   } catch (err) {
     logger.error("Error sending /start response", { error: err.message, userId });
@@ -39,47 +51,38 @@ bot.start(async (ctx) => {
   }
 });
 
-// Админ-панель
-bot.action("admin_panel", async (ctx) => {
+// Скрыть меню
+bot.hears("⬅️ Скрыть меню", async (ctx) => {
   const userId = ctx.from.id.toString();
-  logger.info("Received admin_panel action", { userId });
+  logger.info("Received hide menu command", { userId });
 
   try {
-    await ctx.answerCbQuery(); // Подтверждаем Telegram, что мы обработали callback
-    logger.info("Callback query answered", { userId });
-
-    await ctx.reply("🔑 Админ-панель:", {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: "📦 Парсер товаров", callback_data: "parse_products" },
-            { text: "✏️ Редактировать товары", callback_data: "edit_products" },
-          ],
-          [
-            { text: "👁️ Управление видимостью", callback_data: "toggle_visibility" },
-            { text: "👤 Добавить админа", callback_data: "add_admin" },
-          ],
-          [
-            { text: "📋 Просмотреть товары", callback_data: "view_products" },
-            { text: "💰 Массовая наценка", callback_data: "bulk_price" },
-          ],
-        ],
-      },
+    await ctx.reply("Меню скрыто. Чтобы показать его снова, отправьте /start", {
+      reply_markup: { remove_keyboard: true },
     });
-    logger.info("Sent admin panel", { userId });
+    logger.info("Reply keyboard hidden", { userId });
   } catch (err) {
-    logger.error("Error sending admin panel", { error: err.message, userId });
-    await ctx.reply("❌ Ошибка отправки админ-панели: " + err.message);
+    logger.error("Error hiding menu", { error: err.message, userId });
+    await ctx.reply("❌ Ошибка: " + err.message);
   }
 });
 
-// Парсер CSV
-bot.action("parse_products", async (ctx) => {
+// Парсер товаров
+bot.hears("📦 Парсер товаров", async (ctx) => {
   const userId = ctx.from.id.toString();
-  logger.info("Received parse_products action", { userId });
+  logger.info("Received parse_products command", { userId });
+
+  const adminIdsFromEnv = process.env.ADMIN_IDS
+    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
+    : [];
+  const isAdmin = adminIdsFromEnv.includes(userId);
+
+  if (!isAdmin) {
+    logger.warn("Admin access denied for parse_products", { userId });
+    return;
+  }
 
   try {
-    await ctx.answerCbQuery();
     await ctx.reply("📤 Отправьте CSV-файл с товарами. Бот распознает столбцы (например, name, price, description).");
     logger.info("Prompted for CSV upload", { userId });
   } catch (err) {
@@ -118,7 +121,7 @@ bot.on("document", async (ctx) => {
       logger.error("Supabase error inserting products", { error, userId });
       await ctx.reply("❌ Ошибка сохранения товаров: " + error.message);
     } else {
-      await resetProductsCache(); // Сбрасываем кэш
+      await resetProductsCache();
       await ctx.reply(
         `✅ Добавлено ${newProducts.length} товаров! Используйте "Управление видимостью" для отображения.`
       );
@@ -130,64 +133,10 @@ bot.on("document", async (ctx) => {
   }
 });
 
-// Обработчики текстовых команд
-bot.action("edit_products", async (ctx) => {
+// Редактировать товары
+bot.hears("✏️ Редактировать товары", async (ctx) => {
   const userId = ctx.from.id.toString();
-  logger.info("Received edit_products action", { userId });
-
-  try {
-    await ctx.answerCbQuery();
-    await ctx.reply(
-      "✏️ Введите: edit,id,название,цена,описание,категория,остаток,теги (оставьте пустым для текущего значения)"
-    );
-  } catch (err) {
-    logger.error("Error in edit_products", { error: err.message, userId });
-    await ctx.reply("❌ Ошибка: " + err.message);
-  }
-});
-
-bot.action("toggle_visibility", async (ctx) => {
-  const userId = ctx.from.id.toString();
-  logger.info("Received toggle_visibility action", { userId });
-
-  try {
-    await ctx.answerCbQuery();
-    await ctx.reply("👁️ Введите: visibility,id,true/false (например, visibility,12345,true)");
-  } catch (err) {
-    logger.error("Error in toggle_visibility", { error: err.message, userId });
-    await ctx.reply("❌ Ошибка: " + err.message);
-  }
-});
-
-bot.action("bulk_price", async (ctx) => {
-  const userId = ctx.from.id.toString();
-  logger.info("Received bulk_price action", { userId });
-
-  try {
-    await ctx.answerCbQuery();
-    await ctx.reply("💰 Введите: bulk,percent/fixed,значение (например, bulk,percent,10)");
-  } catch (err) {
-    logger.error("Error in bulk_price", { error: err.message, userId });
-    await ctx.reply("❌ Ошибка: " + err.message);
-  }
-});
-
-bot.action("add_admin", async (ctx) => {
-  const userId = ctx.from.id.toString();
-  logger.info("Received add_admin action", { userId });
-
-  try {
-    await ctx.answerCbQuery();
-    await ctx.reply("👤 Введите Telegram ID нового админа (например, 123456789)");
-  } catch (err) {
-    logger.error("Error in add_admin", { error: err.message, userId });
-    await ctx.reply("❌ Ошибка: " + err.message);
-  }
-});
-
-bot.action("view_products", async (ctx) => {
-  const userId = ctx.from.id.toString();
-  logger.info("Received view_products action", { userId });
+  logger.info("Received edit_products command", { userId });
 
   const adminIdsFromEnv = process.env.ADMIN_IDS
     ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
@@ -195,13 +144,83 @@ bot.action("view_products", async (ctx) => {
   const isAdmin = adminIdsFromEnv.includes(userId);
 
   if (!isAdmin) {
-    logger.warn("Admin access denied in view_products", { userId });
+    logger.warn("Admin access denied for edit_products", { userId });
+    return;
+  }
+
+  try {
+    await ctx.reply(
+      "✏️ Введите: edit,id,название,цена,описание,категория,остаток,теги (оставьте пустым для текущего значения)\nПример: edit,123,Простыня,1500,Белая простыня,постель,10,хлопок"
+    );
+  } catch (err) {
+    logger.error("Error in edit_products", { error: err.message, userId });
+    await ctx.reply("❌ Ошибка: " + err.message);
+  }
+});
+
+// Управление видимостью
+bot.hears("👁️ Управление видимостью", async (ctx) => {
+  const userId = ctx.from.id.toString();
+  logger.info("Received toggle_visibility command", { userId });
+
+  const adminIdsFromEnv = process.env.ADMIN_IDS
+    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
+    : [];
+  const isAdmin = adminIdsFromEnv.includes(userId);
+
+  if (!isAdmin) {
+    logger.warn("Admin access denied for toggle_visibility", { userId });
+    return;
+  }
+
+  try {
+    await ctx.reply("👁️ Введите: visibility,id,true/false\nПример: visibility,123,true");
+  } catch (err) {
+    logger.error("Error in toggle_visibility", { error: err.message, userId });
+    await ctx.reply("❌ Ошибка: " + err.message);
+  }
+});
+
+// Добавить админа
+bot.hears("👤 Добавить админа", async (ctx) => {
+  const userId = ctx.from.id.toString();
+  logger.info("Received add_admin command", { userId });
+
+  const adminIdsFromEnv = process.env.ADMIN_IDS
+    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
+    : [];
+  const isAdmin = adminIdsFromEnv.includes(userId);
+
+  if (!isAdmin) {
+    logger.warn("Admin access denied for add_admin", { userId });
+    return;
+  }
+
+  try {
+    await ctx.reply("👤 Введите Telegram ID нового админа (например, 123456789)");
+  } catch (err) {
+    logger.error("Error in add_admin", { error: err.message, userId });
+    await ctx.reply("❌ Ошибка: " + err.message);
+  }
+});
+
+// Просмотреть товары
+bot.hears("📋 Просмотреть товары", async (ctx) => {
+  const userId = ctx.from.id.toString();
+  logger.info("Received view_products command", { userId });
+
+  const adminIdsFromEnv = process.env.ADMIN_IDS
+    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
+    : [];
+  const isAdmin = adminIdsFromEnv.includes(userId);
+
+  if (!isAdmin) {
+    logger.warn("Admin access denied for view_products", { userId });
     await ctx.reply("🚫 Доступ запрещён");
     return;
   }
 
   try {
-    await ctx.answerCbQuery();
     const products = await getAllProducts();
     if (!products || products.length === 0) {
       await ctx.reply("⚠️ Товаров пока нет");
@@ -226,6 +245,30 @@ bot.action("view_products", async (ctx) => {
   }
 });
 
+// Массовая наценка
+bot.hears("💰 Массовая наценка", async (ctx) => {
+  const userId = ctx.from.id.toString();
+  logger.info("Received bulk_price command", { userId });
+
+  const adminIdsFromEnv = process.env.ADMIN_IDS
+    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
+    : [];
+  const isAdmin = adminIdsFromEnv.includes(userId);
+
+  if (!isAdmin) {
+    logger.warn("Admin access denied for bulk_price", { userId });
+    return;
+  }
+
+  try {
+    await ctx.reply("💰 Введите: bulk,percent/fixed,значение\nПример: bulk,percent,10");
+  } catch (err) {
+    logger.error("Error in bulk_price", { error: err.message, userId });
+    await ctx.reply("❌ Ошибка: " + err.message);
+  }
+});
+
+// Обработка текстовых команд
 bot.on("text", async (ctx) => {
   const userId = ctx.from.id.toString();
   const text = ctx.message.text;
@@ -269,7 +312,7 @@ bot.on("text", async (ctx) => {
       logger.info("Visibility updated", { userId, id, isVisible });
     } else if (text.match(/^\d+$/)) {
       await addAdmin(text);
-      await ctx.reply(`✅ Админ с ID ${text} добавлен!`);
+      await ctx.reply(`✅ Админ с ID ${text} добавлен! Перезапустите бота с помощью /start`);
       logger.info("Admin added", { userId, newAdminId: text });
     }
   } catch (err) {
