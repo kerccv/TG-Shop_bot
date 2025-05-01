@@ -41,39 +41,44 @@ bot.action("admin_panel", async (ctx) => {
   const userId = ctx.from.id.toString();
   logger.info("Received admin_panel action", { userId });
 
-  let isAdmin = false;
-  try {
-    isAdmin = await isAdminUser(userId);
-    logger.info("Admin check for admin_panel", { userId, isAdmin });
-  } catch (err) {
-    logger.error("Error checking admin status in admin_panel", { error: err.message, userId });
-    return ctx.reply("❌ Ошибка сервера");
-  }
+  // Проверяем админ-права через ADMIN_IDS (уже проверяли в /start, но Telegram требует повторной проверки)
+  const adminIdsFromEnv = process.env.ADMIN_IDS
+    ? process.env.ADMIN_IDS.split(",").map((id) => id.trim())
+    : [];
+  const isAdmin = adminIdsFromEnv.includes(userId);
+
+  logger.info("Admin check for admin_panel", { userId, isAdmin, adminIdsFromEnv });
 
   if (!isAdmin) {
-    logger.warn("Admin access denied", { userId });
-    return ctx.reply("🚫 Доступ запрещён");
+    logger.warn("Admin access denied in admin_panel", { userId });
+    await ctx.reply("🚫 Доступ запрещён");
+    return;
   }
 
-  await ctx.reply("🔑 Админ-панель:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "📦 Парсер товаров", callback_data: "parse_products" },
-          { text: "✏️ Редактировать товары", callback_data: "edit_products" },
+  try {
+    await ctx.reply("🔑 Админ-панель:", {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "📦 Парсер товаров", callback_data: "parse_products" },
+            { text: "✏️ Редактировать товары", callback_data: "edit_products" },
+          ],
+          [
+            { text: "👁️ Управление видимостью", callback_data: "toggle_visibility" },
+            { text: "👤 Добавить админа", callback_data: "add_admin" },
+          ],
+          [
+            { text: "📋 Просмотреть товары", callback_data: "view_products" },
+            { text: "💰 Массовая наценка", callback_data: "bulk_price" },
+          ],
         ],
-        [
-          { text: "👁️ Управление видимостью", callback_data: "toggle_visibility" },
-          { text: "👤 Добавить админа", callback_data: "add_admin" },
-        ],
-        [
-          { text: "📋 Просмотреть товары", callback_data: "view_products" },
-          { text: "💰 Массовая наценка", callback_data: "bulk_price" },
-        ],
-      ],
-    },
-  });
-  logger.info("Sent admin panel", { userId });
+      },
+    });
+    logger.info("Sent admin panel", { userId });
+  } catch (err) {
+    logger.error("Error sending admin panel", { error: err.message, userId });
+    await ctx.reply("❌ Ошибка отправки админ-панели: " + err.message);
+  }
 });
 
 // Парсер CSV
