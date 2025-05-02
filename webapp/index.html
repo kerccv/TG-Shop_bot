@@ -5,17 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lavander Shop</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="./public/styles.css">
 </head>
 <body>
   <!-- Заголовок -->
   <header>
     <h1>Lavander Shop 🛒</h1>
     <p>Магазин постельного белья</p>
+    <div class="cart-icon" onclick="toggleCart()">🛒<span class="cart-count" id="cart-count">0</span></div>
+    <div id="cart" class="cart">
+      <h3>Корзина</h3>
+      <div id="cart-items"></div>
+    </div>
   </header>
 
-  <!-- Контейнер для товаров -->
+  <!-- Фильтры и поиск -->
   <main>
+    <div class="filters">
+      <select id="category-filter" onchange="filterProducts()">
+        <option value="">Все категории</option>
+      </select>
+      <select id="sort-filter" onchange="sortProducts()">
+        <option value="default">По умолчанию</option>
+        <option value="price-asc">Цена: по возрастанию</option>
+        <option value="price-desc">Цена: по убыванию</option>
+      </select>
+      <input type="text" id="search-input" placeholder="Поиск..." oninput="filterProducts()">
+    </div>
+
     <div id="products-container">
       <!-- Карточки товаров будут добавлены здесь через JS -->
     </div>
@@ -27,16 +44,68 @@
   </footer>
 
   <script>
-    // Функция для загрузки товаров
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // Функция переключения корзины
+    function toggleCart() {
+      const cartDiv = document.getElementById('cart');
+      cartDiv.style.display = cartDiv.style.display === 'block' ? 'none' : 'block';
+      updateCart();
+    }
+
+    // Добавление товара в корзину
+    function addToCart(product) {
+      cart.push(product);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+
+    // Удаление товара из корзины
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+
+    // Обновление корзины
+    function updateCart() {
+      const cartCount = document.getElementById('cart-count');
+      const cartItems = document.getElementById('cart-items');
+      cartCount.textContent = cart.length;
+      cartItems.innerHTML = '';
+      cart.forEach((item, index) => {
+        const cartItem = document.createElement('div');
+        cartItem.className = 'cart-item';
+        cartItem.innerHTML = `
+          ${item.name} - ${item.price} грн
+          <button onclick="removeFromCart(${index})">Удалить</button>
+        `;
+        cartItems.appendChild(cartItem);
+      });
+    }
+
+    // Фильтрация и сортировка товаров
+    let allProducts = [];
+
     async function loadProducts() {
       try {
         const response = await fetch('/api/products');
-        const products = await response.json();
+        allProducts = await response.json();
 
         const productsContainer = document.getElementById('products-container');
-        productsContainer.innerHTML = ''; // Очищаем контейнер
+        productsContainer.innerHTML = '';
 
-        if (products.length === 0) {
+        // Заполняем фильтр категорий
+        const categories = [...new Set(allProducts.map(p => p.category))];
+        const categoryFilter = document.getElementById('category-filter');
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          categoryFilter.appendChild(option);
+        });
+
+        if (allProducts.length === 0) {
           productsContainer.innerHTML = `
             <div class="product-card col-span-2 text-center py-4">
               <p>Товаров пока нет 😔</p>
@@ -45,25 +114,7 @@
           return;
         }
 
-        // Отображаем все товары
-        products.forEach(product => {
-          const productCard = document.createElement('div');
-          productCard.className = 'product-card';
-          // Проверяем наличие image_url и отображаем фото или заглушку
-          const imageSrc = product.image_url ? product.image_url : '';
-          const imageContent = imageSrc
-            ? `<img src="${imageSrc}" alt="${product.name}" class="product-image">`
-            : `<div class="product-image-placeholder"><span>📷 Нет фото</span></div>`;
-          productCard.innerHTML = `
-            ${imageContent}
-            <h3 class="product-title">${product.name}</h3>
-            <p class="product-description">${product.description || 'Нет описания'}</p>
-            <p class="product-price">${product.price} грн</p>
-            <p class="product-stock">Остаток: ${product.stock}</p>
-            <button class="product-button">Добавить в корзину</button>
-          `;
-          productsContainer.appendChild(productCard);
-        });
+        filterProducts(); // Применяем фильтры сразу
       } catch (error) {
         console.error('Ошибка загрузки товаров:', error);
         document.getElementById('products-container').innerHTML = `
@@ -72,6 +123,58 @@
           </div>
         `;
       }
+    }
+
+    function filterProducts() {
+      const categoryFilter = document.getElementById('category-filter').value;
+      const searchInput = document.getElementById('search-input').value.toLowerCase();
+      let filteredProducts = allProducts.filter(product => {
+        const matchesCategory = !categoryFilter || product.category === categoryFilter;
+        const matchesSearch = !searchInput || product.name.toLowerCase().includes(searchInput);
+        return matchesCategory && matchesSearch;
+      });
+      sortProducts(filteredProducts);
+    }
+
+    function sortProducts(filteredProducts = allProducts) {
+      const sortFilter = document.getElementById('sort-filter').value;
+      let sortedProducts = [...filteredProducts];
+      if (sortFilter === 'price-asc') {
+        sortedProducts.sort((a, b) => a.price - b.price);
+      } else if (sortFilter === 'price-desc') {
+        sortedProducts.sort((a, b) => b.price - a.price);
+      }
+      renderProducts(sortedProducts);
+    }
+
+    function renderProducts(products) {
+      const productsContainer = document.getElementById('products-container');
+      productsContainer.innerHTML = '';
+      products.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
+        const imageSrc = product.image_url ? product.image_url : '';
+        const imageContent = imageSrc
+          ? `<img src="${imageSrc}" alt="${product.name}" class="product-image">`
+          : `<div class="product-image-placeholder"><span>📷 Нет фото</span></div>`;
+        productCard.innerHTML = `
+          ${imageContent}
+          <h3 class="product-title">${product.name}</h3>
+          <p class="product-description">${product.description || 'Нет описания'}</p>
+          <p class="product-price">${product.price} грн</p>
+          <p class="product-stock">Остаток: ${product.stock}</p>
+          <div class="product-buttons">
+            <button class="product-button" onclick="addToCart(${JSON.stringify(product)})">Добавить в корзину</button>
+            <button class="buy-now-button" onclick="buyNow('${product.name}')">Купить сейчас</button>
+          </div>
+        `;
+        productsContainer.appendChild(productCard);
+      });
+    }
+
+    // Имитация покупки
+    function buyNow(productName) {
+      alert(`Спасибо за покупку ${productName}! Оформление скоро будет доступно.`);
     }
 
     // Загружаем товары при загрузке страницы
