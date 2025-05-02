@@ -7,15 +7,15 @@ import { logger } from "./utils.js";
 export const bot = new Telegraf(process.env.BOT_TOKEN);
 const WEBAPP_URL = process.env.WEBAPP_URL || "https://tg-shop-bot-gw2h.onrender.com/webapp/index.html";
 
-// Установка постоянной кнопки "Open App" внизу слева
+// Установка постоянной кнопки "Open App" при запуске бота
 bot.telegram.setChatMenuButton({
   type: "web_app",
   text: "Open App",
   web_app: { url: WEBAPP_URL },
 }).then(() => {
-  logger.info("Custom menu button 'Open App' set", { url: WEBAPP_URL });
+  logger.info("Custom menu button 'Open App' set at startup", { url: WEBAPP_URL });
 }).catch((err) => {
-  logger.error("Error setting custom menu button", { error: err.message });
+  logger.error("Error setting custom menu button at startup", { error: err.message });
 });
 
 // Команда /start
@@ -26,6 +26,19 @@ bot.start(async (ctx) => {
   // Проверяем админ-права
   const isAdmin = await isAdminUser(userId);
   logger.info("Admin check completed", { userId, isAdmin });
+
+  // Повторно устанавливаем кнопку "Open App" для этого чата
+  try {
+    await ctx.telegram.setChatMenuButton({
+      chat_id: ctx.chat.id,
+      type: "web_app",
+      text: "Open App",
+      web_app: { url: WEBAPP_URL },
+    });
+    logger.info("Custom menu button 'Open App' set for chat", { chatId: ctx.chat.id, url: WEBAPP_URL });
+  } catch (err) {
+    logger.error("Error setting custom menu button for chat", { chatId: ctx.chat.id, error: err.message });
+  }
 
   // Inline-кнопка "Открыть магазин" для всех пользователей
   const inlineButtons = [[{ text: "🛒 Открыть магазин", web_app: { url: WEBAPP_URL } }]];
