@@ -6,60 +6,54 @@
   <title>Lavander Shop</title>
   <link rel="stylesheet" href="./public/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
   <!-- Заголовок -->
   <header>
     <div>
-      <h1>Lavander Shop 🛒</h1>
+      <h1>Lavander Shop <i class="fas fa-bed"></i></h1>
       <p>Магазин постельного белья</p>
     </div>
-    <a href="./cart.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
+    <div style="display: flex; gap: 1rem;">
+      <a href="./favorites.html" class="cart-icon"><i class="fas fa-heart"></i><span class="cart-count" id="favorites-count">0</span></a>
+      <a href="./cart.html" class="cart-icon"><i class="fas fa-shopping-cart"></i><span class="cart-count" id="cart-count">0</span></a>
+    </div>
   </header>
-
-  <!-- Модальное окно увеличенного фото -->
-  <div id="image-modal" class="image-modal">
-    <span class="close-image" onclick="closeImageModal()">✕</span>
-    <img id="modal-image" src="" alt="Увеличенное фото">
-  </div>
 
   <!-- Полноэкранный вид товара -->
   <div id="product-fullscreen" class="product-fullscreen"></div>
 
-  <!-- Поиск и фильтры -->
+  <!-- Фильтры и сортировка -->
   <main>
-    <div class="filters-container">
-      <div class="filters">
-        <div class="filter-container">
-          <select id="category-filter" onchange="filterProducts()">
-            <option value="">Все категории</option>
-          </select>
+    <div class="filters-header">
+      <span class="results-count" id="results-count">Результатов: 0</span>
+      <div class="filter-sort-container">
+        <div class="filter-button" onclick="toggleFilters()">
+          <i class="fas fa-filter"></i> Фильтры
         </div>
-        <div class="filter-container">
+        <div class="sort-container">
+          <i class="fas fa-sort"></i>
           <select id="sort-filter" onchange="sortProducts()">
             <option value="default">Сортировка</option>
             <option value="price-asc">Цена: по возрастанию</option>
             <option value="price-desc">Цена: по убыванию</option>
           </select>
         </div>
-        <div class="filter-container search" id="desktop-search">
-          <input type="text" id="search-input" placeholder="Поиск..." oninput="filterProducts()">
-        </div>
-        <span class="search-icon" onclick="toggleSearch()">🔍</span>
       </div>
     </div>
 
-    <!-- Полноэкранный поиск -->
-    <div id="search-overlay" class="search-overlay" onclick="closeSearch()"></div>
-    <div id="search-panel" class="search-panel">
-      <button class="search-close" onclick="closeSearch()">✕</button>
-      <input type="text" id="mobile-search-input" placeholder="Введите запрос..." oninput="showSuggestions()">
-      <div id="suggestions" class="suggestions"></div>
+    <!-- Полноэкранное окно фильтров -->
+    <div id="filters-overlay" class="filters-overlay" onclick="closeFilters()"></div>
+    <div id="filters-panel" class="filters-panel">
+      <button class="filters-close" onclick="closeFilters()"><i class="fas fa-times"></i></button>
+      <h2>Фильтры</h2>
+      <div id="filter-groups"></div>
+      <button class="apply-filters" onclick="applyFilters()">Применить</button>
     </div>
 
-    <div id="products-container">
-      <!-- Карточки товаров будут добавлены здесь через JS -->
-    </div>
+    <div id="products-container"></div>
+    <div class="pagination" id="pagination"></div>
   </main>
 
   <!-- Нижняя панель -->
@@ -69,13 +63,20 @@
 
   <script>
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
     let allProducts = [];
+    let filteredProducts = [];
+    const ITEMS_PER_PAGE = 15;
+    let currentPage = 1;
 
-    // Инициализация корзины
-    function initializeCart() {
+    // Инициализация корзины и избранного
+    function initializeCartAndFavorites() {
       cart = cart.map(item => ({ ...item, quantity: item.quantity || 1 }));
       localStorage.setItem('cart', JSON.stringify(cart));
+      favorites = favorites.map(item => ({ ...item }));
+      localStorage.setItem('favorites', JSON.stringify(favorites));
       updateCartCount();
+      updateFavoritesCount();
     }
 
     // Обновление счётчика корзины
@@ -85,7 +86,27 @@
       cartCount.textContent = totalItems;
     }
 
-    // Добавление товара в корзину с анимацией
+    // Обновление счётчика избранного
+    function updateFavoritesCount() {
+      const favoritesCount = document.getElementById('favorites-count');
+      favoritesCount.textContent = favorites.length;
+    }
+
+    // Добавление/удаление из избранного
+    function toggleFavorite(product, button) {
+      const index = favorites.findIndex(item => item.id === product.id);
+      if (index === -1) {
+        favorites.push(product);
+        button.classList.add('favorited');
+      } else {
+        favorites.splice(index, 1);
+        button.classList.remove('favorited');
+      }
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+      updateFavoritesCount();
+    }
+
+    // Добавление товара в корзину
     function addToCart(product, button) {
       const existingItem = cart.find(item => item.id === product.id);
       if (existingItem) {
@@ -96,7 +117,6 @@
       localStorage.setItem('cart', JSON.stringify(cart));
       updateCartCount();
 
-      // Анимация "полёта" в корзину
       const cartIcon = document.querySelector('.cart-icon');
       const clonedImage = button.closest('.product-card').querySelector('.product-image, .product-image-placeholder').cloneNode(true);
       document.body.appendChild(clonedImage);
@@ -124,35 +144,14 @@
       try {
         const response = await fetch('/api/products');
         allProducts = await response.json();
-
-        const productsContainer = document.getElementById('products-container');
-        productsContainer.innerHTML = '';
-
-        // Заполняем фильтр категорий
-        const categories = [...new Set(allProducts.map(p => p.category))];
-        const categoryFilter = document.getElementById('category-filter');
-        categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          categoryFilter.appendChild(option);
-        });
-
-        if (allProducts.length === 0) {
-          productsContainer.innerHTML = `
-            <div class="product-card col-span-2 text-center py-4">
-              <p>Товаров пока нет 😔</p>
-            </div>
-          `;
-          return;
-        }
-
-        filterProducts();
-        initializeCart();
+        filteredProducts = [...allProducts];
+        renderFilters();
+        renderPage(1);
+        initializeCartAndFavorites();
       } catch (error) {
         console.error('Ошибка загрузки товаров:', error);
         document.getElementById('products-container').innerHTML = `
-          <div class="product-card col-span-2 text-center text-red-600 py-4">
+          <div class="text-center text-red-600 py-4">
             <p>Ошибка загрузки товаров: ${error.message}</p>
           </div>
         `;
@@ -161,21 +160,22 @@
 
     // Фильтрация товаров
     function filterProducts() {
-      const categoryFilter = document.getElementById('category-filter').value;
-      const searchInput = document.getElementById('search-input').value.toLowerCase();
-      const mobileSearchInput = document.getElementById('mobile-search-input').value.toLowerCase();
-      const query = searchInput || mobileSearchInput || '';
-      let filteredProducts = allProducts.filter(product => {
-        const matchesCategory = !categoryFilter || product.category === categoryFilter;
-        const matchesSearch = !query || product.name.toLowerCase().includes(query);
-        return matchesCategory && matchesSearch;
+      const selectedTags = Array.from(document.querySelectorAll('.filter-option input:checked')).map(input => input.value.toLowerCase());
+      const priceRange = {
+        min: parseFloat(document.getElementById('price-min')?.value || 0),
+        max: parseFloat(document.getElementById('price-max')?.value || Infinity)
+      };
+      filteredProducts = allProducts.filter(product => {
+        const tags = product.tags ? product.tags.map(tag => tag.toLowerCase()) : [];
+        const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => tags.includes(tag));
+        const matchesPrice = product.price >= priceRange.min && product.price <= priceRange.max;
+        return matchesTags && matchesPrice;
       });
-      sortProducts(filteredProducts);
-      showSuggestions();
+      renderPage(1);
     }
 
     // Сортировка товаров
-    function sortProducts(filteredProducts = allProducts) {
+    function sortProducts() {
       const sortFilter = document.getElementById('sort-filter').value;
       let sortedProducts = [...filteredProducts];
       if (sortFilter === 'price-asc') {
@@ -183,14 +183,31 @@
       } else if (sortFilter === 'price-desc') {
         sortedProducts.sort((a, b) => b.price - a.price);
       }
-      renderProducts(sortedProducts);
+      filteredProducts = sortedProducts;
+      renderPage(currentPage);
     }
 
-    // Отрисовка товаров
-    function renderProducts(products) {
+    // Отрисовка страницы товаров
+    function renderPage(page) {
+      currentPage = page;
+      const start = (page - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE;
+      const productsToShow = filteredProducts.slice(start, end);
+
       const productsContainer = document.getElementById('products-container');
       productsContainer.innerHTML = '';
-      products.forEach(product => {
+      document.getElementById('results-count').textContent = `Результатов: ${filteredProducts.length}`;
+
+      if (productsToShow.length === 0) {
+        productsContainer.innerHTML = `
+          <div class="text-center py-4">
+            <p>Товаров не найдено 😔</p>
+          </div>
+        `;
+        return;
+      }
+
+      productsToShow.forEach(product => {
         const productCard = document.createElement('a');
         productCard.href = `#product-${product.id}`;
         productCard.className = 'product-card';
@@ -198,20 +215,93 @@
         const firstImage = images[0] || '';
         const imageContent = firstImage
           ? `<img src="${firstImage}" alt="${product.name}" class="product-image">`
-          : `<div class="product-image-placeholder"><span>📷 Нет фото</span></div>`;
+          : `<div class="product-image-placeholder"><span><i class="fas fa-image"></i></span></div>`;
+        const isFavorited = favorites.some(item => item.id === product.id);
         productCard.innerHTML = `
           ${imageContent}
-          <h3 class="product-title">${product.name}</h3>
-          <p class="product-price">${product.price} грн</p>
-          <p class="product-stock">Остаток: ${product.stock}</p>
-          <p class="product-details">Нажмите, чтобы узнать подробнее</p>
+          <div class="product-info">
+            <span class="product-price">${product.price} грн</span>
+            <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="event.preventDefault(); toggleFavorite(${JSON.stringify(product)}, this)">
+              <i class="fas fa-heart"></i>
+            </button>
+          </div>
         `;
         productCard.addEventListener('click', (e) => {
+          if (e.target.closest('.favorite-btn')) return;
           e.preventDefault();
           openProductFullscreen(product);
         });
         productsContainer.appendChild(productCard);
       });
+
+      renderPagination();
+    }
+
+    // Отрисовка пагинации
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+        button.textContent = i;
+        button.onclick = () => renderPage(i);
+        pagination.appendChild(button);
+      }
+    }
+
+    // Отрисовка фильтров
+    function renderFilters() {
+      const tags = [...new Set(allProducts.flatMap(p => p.tags || []))];
+      const prices = allProducts.map(p => p.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+
+      const filterGroups = document.getElementById('filter-groups');
+      filterGroups.innerHTML = `
+        <div class="filter-group">
+          <h3>Теги</h3>
+          ${tags.map(tag => `
+            <div class="filter-option">
+              <input type="checkbox" value="${tag}" id="tag-${tag}">
+              <label for="tag-${tag}">${tag}</label>
+            </div>
+          `).join('')}
+        </div>
+        <div class="filter-group">
+          <h3>Цена</h3>
+          <div>
+            <label for="price-min">От:</label>
+            <input type="number" id="price-min" value="${minPrice}" min="${minPrice}" max="${maxPrice}">
+          </div>
+          <div>
+            <label for="price-max">До:</label>
+            <input type="number" id="price-max" value="${maxPrice}" min="${minPrice}" max="${maxPrice}">
+          </div>
+        </div>
+      `;
+    }
+
+    // Открытие/закрытие фильтров
+    function toggleFilters() {
+      const overlay = document.getElementById('filters-overlay');
+      const panel = document.getElementById('filters-panel');
+      overlay.style.display = 'flex';
+      panel.style.display = 'block';
+    }
+
+    function closeFilters() {
+      const overlay = document.getElementById('filters-overlay');
+      const panel = document.getElementById('filters-panel');
+      overlay.style.display = 'none';
+      panel.style.display = 'none';
+    }
+
+    function applyFilters() {
+      filterProducts();
+      closeFilters();
     }
 
     // Открытие полноэкранного вида товара
@@ -222,15 +312,15 @@
       let currentImageIndex = 0;
 
       const imageContent = firstImage
-        ? `<img src="${firstImage}" alt="${product.name}" class="gallery-image" onclick="openImageModal('${firstImage}')">`
-        : `<div class="product-image-placeholder"><span>📷 Нет фото</span></div>`;
+        ? `<img src="${firstImage}" alt="${product.name}" class="gallery-image">`
+        : `<div class="product-image-placeholder"><span><i class="fas fa-image"></i></span></div>`;
 
       const tagsContent = product.tags && product.tags.length
         ? product.tags.map(tag => `<span class="tag">${tag}</span>`).join('')
         : 'Нет тегов';
 
       fullscreen.innerHTML = `
-        <button class="back-button" onclick="closeProductFullscreen()">← Назад</button>
+        <button class="back-button" onclick="closeProductFullscreen()"><i class="fas fa-arrow-left"></i> Назад</button>
         <div class="image-gallery">
           ${imageContent}
           ${images.length > 1 ? `
@@ -238,7 +328,7 @@
             <button class="gallery-nav next" onclick="changeImage(1)">→</button>
           ` : ''}
         </div>
-        <div class="product-info">
+        <div class="product-info-full">
           <h2>${product.name}</h2>
           <p class="price">${product.price} грн</p>
           <div class="quantity-control">
@@ -256,7 +346,6 @@
       `;
       fullscreen.style.display = 'block';
 
-      // Добавляем обработчики для кнопок
       fullscreen.querySelectorAll('.product-button').forEach(button => {
         button.addEventListener('click', () => {
           const prod = JSON.parse(button.getAttribute('data-product'));
@@ -265,15 +354,12 @@
         });
       });
 
-      // Функции для листания изображений
       window.changeImage = (direction) => {
         currentImageIndex = (currentImageIndex + direction + images.length) % images.length;
         const galleryImage = fullscreen.querySelector('.gallery-image');
         galleryImage.src = images[currentImageIndex];
-        galleryImage.onclick = () => openImageModal(images[currentImageIndex]);
       };
 
-      // Функция изменения количества
       window.changeQuantity = (change) => {
         const quantitySpan = document.getElementById('quantity');
         let quantity = parseInt(quantitySpan.textContent);
@@ -288,73 +374,9 @@
       fullscreen.style.display = 'none';
     }
 
-    // Открытие увеличенного фото
-    function openImageModal(imageSrc) {
-      const modal = document.getElementById('image-modal');
-      const modalImage = document.getElementById('modal-image');
-      modalImage.src = imageSrc;
-      modal.style.display = 'flex';
-    }
-
-    // Закрытие увеличенного фото
-    function closeImageModal() {
-      const modal = document.getElementById('image-modal');
-      modal.style.display = 'none';
-    }
-
     // Имитация покупки
     function buyNow(productName) {
       alert(`Спасибо за покупку ${productName}! Оформление скоро будет доступно.`);
-    }
-
-    // Поиск на мобильных
-    function toggleSearch() {
-      const overlay = document.getElementById('search-overlay');
-      const panel = document.getElementById('search-panel');
-      overlay.style.display = 'flex';
-      panel.style.display = 'block';
-      document.getElementById('mobile-search-input').focus();
-    }
-
-    function closeSearch() {
-      const overlay = document.getElementById('search-overlay');
-      const panel = document.getElementById('search-panel');
-      overlay.style.display = 'none';
-      panel.style.display = 'none';
-    }
-
-    // Подсказки в поиске
-    function showSuggestions() {
-      const input = document.getElementById('mobile-search-input');
-      const suggestions = document.getElementById('suggestions');
-      const query = input.value.toLowerCase();
-
-      suggestions.innerHTML = '';
-
-      if (query) {
-        const filtered = allProducts.filter(product =>
-          product.name.toLowerCase().includes(query)
-        ).slice(0, 5); // Ограничиваем до 5 подсказок
-
-        if (filtered.length > 0) {
-          filtered.forEach(product => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.textContent = product.name;
-            div.onclick = () => {
-              input.value = product.name;
-              filterProducts();
-              closeSearch();
-            };
-            suggestions.appendChild(div);
-          });
-        } else {
-          const div = document.createElement('div');
-          div.className = 'suggestion-item';
-          div.textContent = 'Ничего не найдено';
-          suggestions.appendChild(div);
-        }
-      }
     }
 
     // Загружаем товары при загрузке страницы
