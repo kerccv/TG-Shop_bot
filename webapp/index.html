@@ -32,7 +32,7 @@
 
   <!-- Нижняя панель -->
   <footer class="bg-purple-600 text-white p-4 text-center">
-    <p class="text-sm">© 2025 Lavender Shop</p>
+    <p class="text-sm">© 2025 Lavander Shop</p>
   </footer>
 
   <script>
@@ -58,10 +58,13 @@
         products.forEach(product => {
           const productCard = document.createElement('div');
           productCard.className = 'bg-white rounded-lg shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow';
+          // Проверяем наличие image_url и отображаем фото или заглушку
+          const imageSrc = product.image_url ? product.image_url : '';
+          const imageContent = imageSrc
+            ? `<img src="${imageSrc}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg mb-2">`
+            : `<div class="w-full h-40 bg-gray-200 rounded-lg mb-2 flex items-center justify-center"><span class="text-gray-500">📷 Нет фото</span></div>`;
           productCard.innerHTML = `
-            <div class="w-full h-40 bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
-              <span class="text-gray-500">📷 Нет фото</span>
-            </div>
+            ${imageContent}
             <h3 class="text-lg font-semibold text-purple-700 text-center">${product.name}</h3>
             <p class="text-gray-600 text-sm text-center mt-1">${product.description || 'Нет описания'}</p>
             <p class="text-purple-600 font-bold mt-2">${product.price} грн</p>
