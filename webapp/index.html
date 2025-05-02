@@ -4,33 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lavander Shop</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./public/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <!-- Заголовок -->
   <header>
-    <h1>Lavander Shop 🛒</h1>
-    <p>Магазин постельного белья</p>
-    <div class="cart-icon" onclick="toggleCart()">🛒<span class="cart-count" id="cart-count">0</span></div>
-    <div id="cart" class="cart">
-      <h3>Корзина</h3>
-      <div id="cart-items"></div>
+    <div>
+      <h1>Lavander Shop 🛒</h1>
+      <p>Магазин постельного белья</p>
     </div>
+    <a href="./cart.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
   </header>
+
+  <!-- Модальное окно увеличенного фото -->
+  <div id="image-modal" class="image-modal">
+    <span class="close-image" onclick="closeImageModal()">✕</span>
+    <img id="modal-image" src="" alt="Увеличенное фото">
+  </div>
+
+  <!-- Полноэкранный вид товара -->
+  <div id="product-fullscreen" class="product-fullscreen"></div>
 
   <!-- Фильтры и поиск -->
   <main>
     <div class="filters">
-      <select id="category-filter" onchange="filterProducts()">
-        <option value="">Все категории</option>
-      </select>
-      <select id="sort-filter" onchange="sortProducts()">
-        <option value="default">По умолчанию</option>
-        <option value="price-asc">Цена: по возрастанию</option>
-        <option value="price-desc">Цена: по убыванию</option>
-      </select>
-      <input type="text" id="search-input" placeholder="Поиск..." oninput="filterProducts()">
+      <div class="filter-container">
+        <select id="category-filter" onchange="filterProducts()">
+          <option value="">Все категории</option>
+        </select>
+      </div>
+      <div class="filter-container">
+        <select id="sort-filter" onchange="sortProducts()">
+          <option value="default">Сортировка</option>
+          <option value="price-asc">Цена: по возрастанию</option>
+          <option value="price-desc">Цена: по убыванию</option>
+        </select>
+      </div>
+      <div class="filter-container search">
+        <input type="text" id="search-input" placeholder="Поиск..." oninput="filterProducts()">
+      </div>
     </div>
 
     <div id="products-container">
@@ -45,48 +58,57 @@
 
   <script>
     let cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    // Функция переключения корзины
-    function toggleCart() {
-      const cartDiv = document.getElementById('cart');
-      cartDiv.style.display = cartDiv.style.display === 'block' ? 'none' : 'block';
-      updateCart();
-    }
-
-    // Добавление товара в корзину
-    function addToCart(product) {
-      cart.push(product);
-      localStorage.setItem('cart', JSON.stringify(cart));
-      updateCart();
-    }
-
-    // Удаление товара из корзины
-    function removeFromCart(index) {
-      cart.splice(index, 1);
-      localStorage.setItem('cart', JSON.stringify(cart));
-      updateCart();
-    }
-
-    // Обновление корзины
-    function updateCart() {
-      const cartCount = document.getElementById('cart-count');
-      const cartItems = document.getElementById('cart-items');
-      cartCount.textContent = cart.length;
-      cartItems.innerHTML = '';
-      cart.forEach((item, index) => {
-        const cartItem = document.createElement('div');
-        cartItem.className = 'cart-item';
-        cartItem.innerHTML = `
-          ${item.name} - ${item.price} грн
-          <button onclick="removeFromCart(${index})">Удалить</button>
-        `;
-        cartItems.appendChild(cartItem);
-      });
-    }
-
-    // Фильтрация и сортировка товаров
     let allProducts = [];
 
+    // Инициализация корзины
+    function initializeCart() {
+      cart = cart.map(item => ({ ...item, quantity: item.quantity || 1 }));
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartCount();
+    }
+
+    // Обновление счётчика корзины
+    function updateCartCount() {
+      const cartCount = document.getElementById('cart-count');
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartCount.textContent = totalItems;
+    }
+
+    // Добавление товара в корзину с анимацией
+    function addToCart(product, button) {
+      const existingItem = cart.find(item => item.id === product.id);
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartCount();
+
+      // Анимация "полёта" в корзину
+      const cartIcon = document.querySelector('.cart-icon');
+      const clonedImage = button.closest('.product-card').querySelector('.product-image, .product-image-placeholder').cloneNode(true);
+      document.body.appendChild(clonedImage);
+      const rect = button.getBoundingClientRect();
+      const cartRect = cartIcon.getBoundingClientRect();
+      clonedImage.style.position = 'fixed';
+      clonedImage.style.top = `${rect.top}px`;
+      clonedImage.style.left = `${rect.left}px`;
+      clonedImage.style.width = `${rect.width}px`;
+      clonedImage.style.height = `${rect.height}px`;
+      clonedImage.style.zIndex = '1000';
+      clonedImage.style.transition = 'all 0.5s ease-in-out';
+      setTimeout(() => {
+        clonedImage.style.top = `${cartRect.top}px`;
+        clonedImage.style.left = `${cartRect.left}px`;
+        clonedImage.style.width = '20px';
+        clonedImage.style.height = '20px';
+        clonedImage.style.opacity = '0';
+      }, 10);
+      setTimeout(() => clonedImage.remove(), 500);
+    }
+
+    // Загрузка товаров
     async function loadProducts() {
       try {
         const response = await fetch('/api/products');
@@ -114,7 +136,8 @@
           return;
         }
 
-        filterProducts(); // Применяем фильтры сразу
+        filterProducts();
+        initializeCart();
       } catch (error) {
         console.error('Ошибка загрузки товаров:', error);
         document.getElementById('products-container').innerHTML = `
@@ -125,6 +148,7 @@
       }
     }
 
+    // Фильтрация товаров
     function filterProducts() {
       const categoryFilter = document.getElementById('category-filter').value;
       const searchInput = document.getElementById('search-input').value.toLowerCase();
@@ -136,6 +160,7 @@
       sortProducts(filteredProducts);
     }
 
+    // Сортировка товаров
     function sortProducts(filteredProducts = allProducts) {
       const sortFilter = document.getElementById('sort-filter').value;
       let sortedProducts = [...filteredProducts];
@@ -147,29 +172,116 @@
       renderProducts(sortedProducts);
     }
 
+    // Отрисовка товаров
     function renderProducts(products) {
       const productsContainer = document.getElementById('products-container');
       productsContainer.innerHTML = '';
       products.forEach(product => {
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
-        const imageSrc = product.image_url ? product.image_url : '';
-        const imageContent = imageSrc
-          ? `<img src="${imageSrc}" alt="${product.name}" class="product-image">`
+        const images = product.image_url ? product.image_url.split(',') : [];
+        const firstImage = images[0] || '';
+        const imageContent = firstImage
+          ? `<img src="${firstImage}" alt="${product.name}" class="product-image">`
           : `<div class="product-image-placeholder"><span>📷 Нет фото</span></div>`;
         productCard.innerHTML = `
           ${imageContent}
           <h3 class="product-title">${product.name}</h3>
-          <p class="product-description">${product.description || 'Нет описания'}</p>
           <p class="product-price">${product.price} грн</p>
           <p class="product-stock">Остаток: ${product.stock}</p>
-          <div class="product-buttons">
-            <button class="product-button" onclick="addToCart(${JSON.stringify(product)})">Добавить в корзину</button>
-            <button class="buy-now-button" onclick="buyNow('${product.name}')">Купить сейчас</button>
-          </div>
+          <p class="product-details">Нажмите, чтобы узнать подробнее</p>
         `;
+        productCard.addEventListener('click', () => openProductFullscreen(product));
         productsContainer.appendChild(productCard);
       });
+    }
+
+    // Открытие полноэкранного вида товара
+    function openProductFullscreen(product) {
+      const fullscreen = document.getElementById('product-fullscreen');
+      const images = product.image_url ? product.image_url.split(',') : [];
+      const firstImage = images[0] || '';
+      let currentImageIndex = 0;
+
+      const imageContent = firstImage
+        ? `<img src="${firstImage}" alt="${product.name}" class="gallery-image" onclick="openImageModal('${firstImage}')">`
+        : `<div class="product-image-placeholder"><span>📷 Нет фото</span></div>`;
+
+      const tagsContent = product.tags && product.tags.length
+        ? product.tags.map(tag => `<span class="tag">${tag}</span>`).join('')
+        : 'Нет тегов';
+
+      fullscreen.innerHTML = `
+        <button class="back-button" onclick="closeProductFullscreen()">← Назад</button>
+        <div class="image-gallery">
+          ${imageContent}
+          ${images.length > 1 ? `
+            <button class="gallery-nav prev" onclick="changeImage(-1)">←</button>
+            <button class="gallery-nav next" onclick="changeImage(1)">→</button>
+          ` : ''}
+        </div>
+        <div class="product-info">
+          <h2>${product.name}</h2>
+          <p class="price">${product.price} грн</p>
+          <div class="quantity-control">
+            <button onclick="changeQuantity(-1)">-</button>
+            <span id="quantity">1</span>
+            <button onclick="changeQuantity(1)">+</button>
+          </div>
+          <p class="description">${product.description || 'Нет описания'}</p>
+          <div class="tags">${tagsContent}</div>
+          <div class="product-buttons">
+            <button class="product-button" data-product='${JSON.stringify(product)}'>Добавить в корзину</button>
+            <button class="buy-now-button" onclick="buyNow('${product.name}')">Купить сейчас</button>
+          </div>
+        </div>
+      `;
+      fullscreen.style.display = 'block';
+
+      // Добавляем обработчики для кнопок
+      fullscreen.querySelectorAll('.product-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const prod = JSON.parse(button.getAttribute('data-product'));
+          prod.quantity = parseInt(document.getElementById('quantity').textContent);
+          addToCart(prod, button);
+        });
+      });
+
+      // Функции для листания изображений
+      window.changeImage = (direction) => {
+        currentImageIndex = (currentImageIndex + direction + images.length) % images.length;
+        const galleryImage = fullscreen.querySelector('.gallery-image');
+        galleryImage.src = images[currentImageIndex];
+        galleryImage.onclick = () => openImageModal(images[currentImageIndex]);
+      };
+
+      // Функция изменения количества
+      window.changeQuantity = (change) => {
+        const quantitySpan = document.getElementById('quantity');
+        let quantity = parseInt(quantitySpan.textContent);
+        quantity = Math.max(1, quantity + change);
+        quantitySpan.textContent = quantity;
+      };
+    }
+
+    // Закрытие полноэкранного вида
+    function closeProductFullscreen() {
+      const fullscreen = document.getElementById('product-fullscreen');
+      fullscreen.style.display = 'none';
+    }
+
+    // Открытие увеличенного фото
+    function openImageModal(imageSrc) {
+      const modal = document.getElementById('image-modal');
+      const modalImage = document.getElementById('modal-image');
+      modalImage.src = imageSrc;
+      modal.style.display = 'flex';
+    }
+
+    // Закрытие увеличенного фото
+    function closeImageModal() {
+      const modal = document.getElementById('image-modal');
+      modal.style.display = 'none';
     }
 
     // Имитация покупки

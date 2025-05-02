@@ -65,9 +65,6 @@ bot.start(async (ctx) => {
     await ctx.reply("✨ Добро пожаловать в магазин постельного белья! Выберите действие:", {
       reply_markup: replyMarkup,
     });
-    if (isAdmin) {
-      await ctx.reply("🔑 Вы админ! Используйте кнопки ниже для управления магазином.");
-    }
     logger.info("Sent /start response", { userId, isAdmin });
   } catch (err) {
     logger.error("Error sending /start response", { error: err.message, userId });

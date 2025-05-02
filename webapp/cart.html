@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Корзина - Lavander Shop</title>
+  <link rel="stylesheet" href="./public/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Заголовок -->
+  <header>
+    <div>
+      <h1>Lavander Shop 🛒</h1>
+      <p>Ваша корзина</p>
+    </div>
+    <a href="./index.html" class="back-button">← Назад</a>
+  </header>
+
+  <!-- Контейнер корзины -->
+  <main class="cart-container">
+    <h2>Корзина</h2>
+    <div id="cart-items"></div>
+    <div id="empty-cart-message" class="empty-cart">Добавьте свой первый товар в корзину! 😺</div>
+    <div id="total-amount" style="margin-top: 1rem; font-size: 1.25rem; color: #6b21a8; font-weight: 700;">Итого: 0 грн</div>
+    <button id="checkout-button" class="checkout-button" disabled onclick="checkout()">Оформить заказ</button>
+  </main>
+
+  <!-- Нижняя панель -->
+  <footer>
+    <p>© 2025 Lavander Shop</p>
+  </footer>
+
+  <script>
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // Инициализация корзины
+    function initializeCart() {
+      cart = cart.map(item => ({ ...item, quantity: item.quantity || 1 }));
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+
+    // Изменение количества товара
+    function changeQuantity(index, change) {
+      if (cart[index].quantity + change < 1) return;
+      cart[index].quantity += change;
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+
+    // Удаление товара из корзины
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+
+    // Обновление корзины
+    function updateCart() {
+      const cartItems = document.getElementById('cart-items');
+      const emptyCartMessage = document.getElementById('empty-cart-message');
+      const checkoutButton = document.getElementById('checkout-button');
+      const totalAmount = document.getElementById('total-amount');
+
+      cartItems.innerHTML = '';
+      const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      totalAmount.textContent = `Итого: ${total} грн`;
+
+      if (cart.length === 0) {
+        emptyCartMessage.style.display = 'block';
+        checkoutButton.disabled = true;
+        totalAmount.style.display = 'none';
+      } else {
+        emptyCartMessage.style.display = 'none';
+        checkoutButton.disabled = false;
+        totalAmount.style.display = 'block';
+        cart.forEach((item, index) => {
+          const cartItem = document.createElement('div');
+          cartItem.className = 'cart-item';
+          cartItem.innerHTML = `
+            <span>${item.name} - ${item.price * item.quantity} грн</span>
+            <div class="quantity-control">
+              <button onclick="changeQuantity(${index}, -1)">-</button>
+              <span>${item.quantity}</span>
+              <button onclick="changeQuantity(${index}, 1)">+</button>
+            </div>
+            <button class="remove-button" onclick="removeFromCart(${index})">Удалить</button>
+          `;
+          cartItems.appendChild(cartItem);
+        });
+      }
+    }
+
+    // Оформление заказа
+    function checkout() {
+      alert('Спасибо за заказ! Скоро с вами свяжутся для подтверждения. 😊');
+      cart = [];
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+
+    // Загружаем корзину при загрузке страницы
+    window.onload = initializeCart;
+  </script>
+</body>
+</html>
