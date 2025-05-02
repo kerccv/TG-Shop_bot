@@ -5,34 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lavander Shop</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Прокрутка без полосы прокрутки */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-  </style>
+  <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="bg-gradient-to-b from-purple-100 to-purple-200 min-h-screen flex flex-col">
+<body>
   <!-- Заголовок -->
-  <header class="bg-purple-600 text-white p-4 text-center shadow-lg">
-    <h1 class="text-2xl font-bold">Lavander Shop</h1>
-    <p class="text-sm mt-1">Магазин постельного белья</p>
+  <header>
+    <h1>Lavander Shop 🛒</h1>
+    <p>Магазин постельного белья</p>
   </header>
 
   <!-- Контейнер для товаров -->
-  <main class="flex-1 p-4 overflow-y-auto no-scrollbar">
-    <div id="products-container" class="grid grid-cols-2 gap-4">
+  <main>
+    <div id="products-container">
       <!-- Карточки товаров будут добавлены здесь через JS -->
     </div>
   </main>
 
   <!-- Нижняя панель -->
-  <footer class="bg-purple-600 text-white p-4 text-center">
-    <p class="text-sm">© 2025 Lavander Shop</p>
+  <footer>
+    <p>© 2025 Lavander Shop</p>
   </footer>
 
   <script>
@@ -47,7 +38,7 @@
 
         if (products.length === 0) {
           productsContainer.innerHTML = `
-            <div class="col-span-2 text-center text-gray-600 py-4">
+            <div class="product-card col-span-2 text-center py-4">
               <p>Товаров пока нет 😔</p>
             </div>
           `;
@@ -57,28 +48,26 @@
         // Отображаем все товары
         products.forEach(product => {
           const productCard = document.createElement('div');
-          productCard.className = 'bg-white rounded-lg shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow';
+          productCard.className = 'product-card';
           // Проверяем наличие image_url и отображаем фото или заглушку
           const imageSrc = product.image_url ? product.image_url : '';
           const imageContent = imageSrc
-            ? `<img src="${imageSrc}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg mb-2">`
-            : `<div class="w-full h-40 bg-gray-200 rounded-lg mb-2 flex items-center justify-center"><span class="text-gray-500">📷 Нет фото</span></div>`;
+            ? `<img src="${imageSrc}" alt="${product.name}" class="product-image">`
+            : `<div class="product-image-placeholder"><span>📷 Нет фото</span></div>`;
           productCard.innerHTML = `
             ${imageContent}
-            <h3 class="text-lg font-semibold text-purple-700 text-center">${product.name}</h3>
-            <p class="text-gray-600 text-sm text-center mt-1">${product.description || 'Нет описания'}</p>
-            <p class="text-purple-600 font-bold mt-2">${product.price} грн</p>
-            <p class="text-gray-500 text-sm mt-1">Остаток: ${product.stock}</p>
-            <button class="mt-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-              Добавить в корзину
-            </button>
+            <h3 class="product-title">${product.name}</h3>
+            <p class="product-description">${product.description || 'Нет описания'}</p>
+            <p class="product-price">${product.price} грн</p>
+            <p class="product-stock">Остаток: ${product.stock}</p>
+            <button class="product-button">Добавить в корзину</button>
           `;
           productsContainer.appendChild(productCard);
         });
       } catch (error) {
         console.error('Ошибка загрузки товаров:', error);
         document.getElementById('products-container').innerHTML = `
-          <div class="col-span-2 text-center text-red-600 py-4">
+          <div class="product-card col-span-2 text-center text-red-600 py-4">
             <p>Ошибка загрузки товаров: ${error.message}</p>
           </div>
         `;
