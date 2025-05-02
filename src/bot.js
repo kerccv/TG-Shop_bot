@@ -7,6 +7,17 @@ import { logger } from "./utils.js";
 export const bot = new Telegraf(process.env.BOT_TOKEN);
 const WEBAPP_URL = process.env.WEBAPP_URL || "https://tg-shop-bot-gw2h.onrender.com/webapp/index.html";
 
+// Установка постоянной кнопки "Open App" внизу слева
+bot.telegram.setChatMenuButton({
+  type: "web_app",
+  text: "Open App",
+  web_app: { url: WEBAPP_URL },
+}).then(() => {
+  logger.info("Custom menu button 'Open App' set", { url: WEBAPP_URL });
+}).catch((err) => {
+  logger.error("Error setting custom menu button", { error: err.message });
+});
+
 // Команда /start
 bot.start(async (ctx) => {
   const userId = ctx.from.id.toString();
@@ -24,7 +35,7 @@ bot.start(async (ctx) => {
 
   if (isAdmin) {
     replyMarkup = {
-      inline_keyboard: inlineButtons,
+      inline_keyboard: inlineButtons, // Сохраняем inline-кнопку
       keyboard: [
         ["📦 Парсер товаров", "✏️ Редактировать товары"],
         ["👁️ Управление видимостью", "👤 Добавить админа"],
