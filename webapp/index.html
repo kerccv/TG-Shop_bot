@@ -26,24 +26,35 @@
   <!-- Полноэкранный вид товара -->
   <div id="product-fullscreen" class="product-fullscreen"></div>
 
-  <!-- Фильтры и поиск -->
+  <!-- Поиск и фильтры -->
   <main>
-    <div class="filters">
-      <div class="filter-container">
-        <select id="category-filter" onchange="filterProducts()">
-          <option value="">Все категории</option>
-        </select>
+    <div class="filters-container">
+      <div class="filters">
+        <div class="filter-container">
+          <select id="category-filter" onchange="filterProducts()">
+            <option value="">Все категории</option>
+          </select>
+        </div>
+        <div class="filter-container">
+          <select id="sort-filter" onchange="sortProducts()">
+            <option value="default">Сортировка</option>
+            <option value="price-asc">Цена: по возрастанию</option>
+            <option value="price-desc">Цена: по убыванию</option>
+          </select>
+        </div>
+        <div class="filter-container search" id="desktop-search">
+          <input type="text" id="search-input" placeholder="Поиск..." oninput="filterProducts()">
+        </div>
+        <span class="search-icon" onclick="toggleSearch()">🔍</span>
       </div>
-      <div class="filter-container">
-        <select id="sort-filter" onchange="sortProducts()">
-          <option value="default">Сортировка</option>
-          <option value="price-asc">Цена: по возрастанию</option>
-          <option value="price-desc">Цена: по убыванию</option>
-        </select>
-      </div>
-      <div class="filter-container search">
-        <input type="text" id="search-input" placeholder="Поиск..." oninput="filterProducts()">
-      </div>
+    </div>
+
+    <!-- Полноэкранный поиск -->
+    <div id="search-overlay" class="search-overlay" onclick="closeSearch()"></div>
+    <div id="search-panel" class="search-panel">
+      <button class="search-close" onclick="closeSearch()">✕</button>
+      <input type="text" id="mobile-search-input" placeholder="Введите запрос..." oninput="showSuggestions()">
+      <div id="suggestions" class="suggestions"></div>
     </div>
 
     <div id="products-container">
@@ -152,12 +163,15 @@
     function filterProducts() {
       const categoryFilter = document.getElementById('category-filter').value;
       const searchInput = document.getElementById('search-input').value.toLowerCase();
+      const mobileSearchInput = document.getElementById('mobile-search-input').value.toLowerCase();
+      const query = searchInput || mobileSearchInput || '';
       let filteredProducts = allProducts.filter(product => {
         const matchesCategory = !categoryFilter || product.category === categoryFilter;
-        const matchesSearch = !searchInput || product.name.toLowerCase().includes(searchInput);
+        const matchesSearch = !query || product.name.toLowerCase().includes(query);
         return matchesCategory && matchesSearch;
       });
       sortProducts(filteredProducts);
+      showSuggestions();
     }
 
     // Сортировка товаров
@@ -291,6 +305,56 @@
     // Имитация покупки
     function buyNow(productName) {
       alert(`Спасибо за покупку ${productName}! Оформление скоро будет доступно.`);
+    }
+
+    // Поиск на мобильных
+    function toggleSearch() {
+      const overlay = document.getElementById('search-overlay');
+      const panel = document.getElementById('search-panel');
+      overlay.style.display = 'flex';
+      panel.style.display = 'block';
+      document.getElementById('mobile-search-input').focus();
+    }
+
+    function closeSearch() {
+      const overlay = document.getElementById('search-overlay');
+      const panel = document.getElementById('search-panel');
+      overlay.style.display = 'none';
+      panel.style.display = 'none';
+    }
+
+    // Подсказки в поиске
+    function showSuggestions() {
+      const input = document.getElementById('mobile-search-input');
+      const suggestions = document.getElementById('suggestions');
+      const query = input.value.toLowerCase();
+
+      suggestions.innerHTML = '';
+
+      if (query) {
+        const filtered = allProducts.filter(product =>
+          product.name.toLowerCase().includes(query)
+        ).slice(0, 5); // Ограничиваем до 5 подсказок
+
+        if (filtered.length > 0) {
+          filtered.forEach(product => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.textContent = product.name;
+            div.onclick = () => {
+              input.value = product.name;
+              filterProducts();
+              closeSearch();
+            };
+            suggestions.appendChild(div);
+          });
+        } else {
+          const div = document.createElement('div');
+          div.className = 'suggestion-item';
+          div.textContent = 'Ничего не найдено';
+          suggestions.appendChild(div);
+        }
+      }
     }
 
     // Загружаем товары при загрузке страницы
