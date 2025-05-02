@@ -3,67 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Магазин постельного белья</title>
-  <link rel="stylesheet" href="/public/styles.css">
+  <title>Lavander Shop</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Прокрутка без полосы прокрутки */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
 </head>
-<body>
-  <div id="app">
-    <h1>Магазин постельного белья</h1>
-    <div id="loader">Загрузка...</div>
-    <div id="error" style="display: none; color: red;"></div>
-    <div id="products"></div>
-  </div>
+<body class="bg-gradient-to-b from-purple-100 to-purple-200 min-h-screen flex flex-col">
+  <!-- Заголовок -->
+  <header class="bg-purple-600 text-white p-4 text-center shadow-lg">
+    <h1 class="text-2xl font-bold">Lavander Shop</h1>
+    <p class="text-sm mt-1">Магазин постельного белья</p>
+  </header>
+
+  <!-- Контейнер для товаров -->
+  <main class="flex-1 p-4 overflow-y-auto no-scrollbar">
+    <div id="products-container" class="grid grid-cols-2 gap-4">
+      <!-- Карточки товаров будут добавлены здесь через JS -->
+    </div>
+  </main>
+
+  <!-- Нижняя панель -->
+  <footer class="bg-purple-600 text-white p-4 text-center">
+    <p class="text-sm">© 2025 Lavender Shop</p>
+  </footer>
 
   <script>
-    const app = document.getElementById("app");
-    const loader = document.getElementById("loader");
-    const errorDiv = document.getElementById("error");
-    const productsDiv = document.getElementById("products");
-
-    const fetchProducts = async () => {
+    // Функция для загрузки товаров
+    async function loadProducts() {
       try {
-        const response = await fetch("/api/products", { timeout: 5000 });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch('/api/products');
         const products = await response.json();
-        return products;
-      } catch (err) {
-        throw new Error("Не удалось загрузить товары: " + err.message);
+
+        const productsContainer = document.getElementById('products-container');
+        productsContainer.innerHTML = ''; // Очищаем контейнер
+
+        if (products.length === 0) {
+          productsContainer.innerHTML = `
+            <div class="col-span-2 text-center text-gray-600 py-4">
+              <p>Товаров пока нет 😔</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Отображаем все товары
+        products.forEach(product => {
+          const productCard = document.createElement('div');
+          productCard.className = 'bg-white rounded-lg shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow';
+          productCard.innerHTML = `
+            <div class="w-full h-40 bg-gray-200 rounded-lg mb-2 flex items-center justify-center">
+              <span class="text-gray-500">📷 Нет фото</span>
+            </div>
+            <h3 class="text-lg font-semibold text-purple-700 text-center">${product.name}</h3>
+            <p class="text-gray-600 text-sm text-center mt-1">${product.description || 'Нет описания'}</p>
+            <p class="text-purple-600 font-bold mt-2">${product.price} грн</p>
+            <p class="text-gray-500 text-sm mt-1">Остаток: ${product.stock}</p>
+            <button class="mt-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+              Добавить в корзину
+            </button>
+          `;
+          productsContainer.appendChild(productCard);
+        });
+      } catch (error) {
+        console.error('Ошибка загрузки товаров:', error);
+        document.getElementById('products-container').innerHTML = `
+          <div class="col-span-2 text-center text-red-600 py-4">
+            <p>Ошибка загрузки товаров: ${error.message}</p>
+          </div>
+        `;
       }
-    };
+    }
 
-    const renderProducts = (products) => {
-      productsDiv.innerHTML = products.length
-        ? products
-            .map(
-              (product) => `
-                <div class="product-card">
-                  <h2>${product.name}</h2>
-                  <p>Цена: ${product.price} ₽</p>
-                  <p>Категория: ${product.category}</p>
-                  <p>В наличии: ${product.stock}</p>
-                  ${product.image_url ? `<img src="${product.image_url}" alt="${product.name}" />` : ""}
-                  <p>${product.description}</p>
-                  <p>Теги: ${product.tags?.join(", ") || "Нет тегов"}</p>
-                </div>
-              `
-            )
-            .join("")
-        : "<p>Товары отсутствуют</p>";
-    };
-
-    const init = async () => {
-      try {
-        const products = await fetchProducts();
-        loader.style.display = "none";
-        renderProducts(products);
-      } catch (err) {
-        loader.style.display = "none";
-        errorDiv.style.display = "block";
-        errorDiv.textContent = err.message;
-      }
-    };
-
-    init();
+    // Загружаем товары при загрузке страницы
+    window.onload = loadProducts;
   </script>
 </body>
 </html>

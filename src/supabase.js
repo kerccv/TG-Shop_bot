@@ -102,7 +102,7 @@ export const getVisibleProducts = async () => {
 
   const now = Date.now();
   if (productsCache && now - cacheTimestamp < CACHE_DURATION) {
-    logger.info("Returning cached products");
+    logger.info("Returning cached products", { count: productsCache.length });
     return productsCache;
   }
 
