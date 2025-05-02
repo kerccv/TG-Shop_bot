@@ -177,7 +177,8 @@
       const productsContainer = document.getElementById('products-container');
       productsContainer.innerHTML = '';
       products.forEach(product => {
-        const productCard = document.createElement('div');
+        const productCard = document.createElement('a');
+        productCard.href = `#product-${product.id}`;
         productCard.className = 'product-card';
         const images = product.image_url ? product.image_url.split(',') : [];
         const firstImage = images[0] || '';
@@ -191,7 +192,10 @@
           <p class="product-stock">Остаток: ${product.stock}</p>
           <p class="product-details">Нажмите, чтобы узнать подробнее</p>
         `;
-        productCard.addEventListener('click', () => openProductFullscreen(product));
+        productCard.addEventListener('click', (e) => {
+          e.preventDefault();
+          openProductFullscreen(product);
+        });
         productsContainer.appendChild(productCard);
       });
     }

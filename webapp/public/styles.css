@@ -36,6 +36,8 @@ header p {
   cursor: pointer;
   position: relative;
   padding: 0.5rem;
+  text-decoration: none; /* Убираем подчёркивание */
+  color: inherit;
   transition: transform 0.2s;
 }
 
@@ -155,16 +157,16 @@ main {
 /* Настройка для мобильных устройств */
 @media (max-width: 767px) {
   #products-container {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
   .product-card {
-    width: 150px;
-    height: 200px; /* Высота на 30% больше ширины */
+    width: 180px;
+    height: 240px; /* Увеличена высота на ~30% */
     padding: 0.5rem;
   }
   .product-image,
   .product-image-placeholder {
-    height: 100px;
+    height: 120px;
   }
   .product-title {
     font-size: 0.875rem;
@@ -184,18 +186,18 @@ main {
 /* Настройка для ПК */
 @media (min-width: 768px) {
   #products-container {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 0.5rem;
     max-width: 1200px;
     margin: 0 auto;
   }
   .product-card {
-    width: 200px;
-    height: 260px; /* Высота на 30% больше ширины */
+    width: 220px;
+    height: 286px; /* Увеличена высота на ~30% */
   }
   .product-image,
   .product-image-placeholder {
-    height: 120px;
+    height: 140px;
   }
 }
 
@@ -209,6 +211,8 @@ main {
   align-items: center;
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
+  text-decoration: none; /* Убираем подчёркивание */
+  color: inherit;
 }
 
 .product-card:hover {
@@ -299,6 +303,7 @@ main {
   color: #6b21a8;
   cursor: pointer;
   margin-bottom: 1rem;
+  text-decoration: none; /* Убираем подчёркивание */
 }
 
 .back-button:hover {
@@ -528,4 +533,9 @@ footer {
 footer p {
   font-size: 0.75rem;
   margin: 0;
+}
+
+/* Убираем подчёркивание у кнопок-ссылок */
+a {
+  text-decoration: none;
 }
