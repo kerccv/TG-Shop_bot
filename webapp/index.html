@@ -1,386 +1,268 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lavander Shop</title>
-  <link rel="stylesheet" href="./public/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин Lavander</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-bottom: 60px;
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #4A90E2;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 60px;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .nav-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            padding: 8px;
+            transition: all 0.3s ease;
+        }
+        .nav-item.active {
+            color: black;
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 50%;
+            z-index: -1;
+        }
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+        }
+        .badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #FF6B6B;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+        .product-card {
+            text-align: center;
+        }
+        .product-title {
+            margin: 0 auto;
+            text-align: center;
+        }
+        .product-description {
+            margin: 0 auto;
+            text-align: center;
+        }
+        .rating {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .star {
+            color: #FFD700;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-  <!-- Заголовок -->
-  <header>
-    <div>
-      <h1>Lavander Shop <i class="fas fa-bed"></i></h1>
-      <p>Магазин постельного белья</p>
-    </div>
-    <div style="display: flex; gap: 1rem;">
-      <a href="./favorites.html" class="cart-icon"><i class="fas fa-heart"></i><span class="cart-count" id="favorites-count">0</span></a>
-      <a href="./cart.html" class="cart-icon"><i class="fas fa-shopping-cart"></i><span class="cart-count" id="cart-count">0</span></a>
-    </div>
-  </header>
+    <div class="container mx-auto p-4">
+        <header class="flex justify-center items-center mb-4">
+            <h1 class="text-2xl font-bold">Магазин Lavander</h1>
+        </header>
 
-  <!-- Полноэкранный вид товара -->
-  <div id="product-fullscreen" class="product-fullscreen"></div>
-
-  <!-- Фильтры и сортировка -->
-  <main>
-    <div class="filters-header">
-      <span class="results-count" id="results-count">Результатов: 0</span>
-      <div class="filter-sort-container">
-        <div class="filter-button" onclick="toggleFilters()">
-          <i class="fas fa-filter"></i> Фильтры
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold product-title">Магазин постельного белья</h2>
+            <p class="text-gray-600 product-description" id="results-count">Результатов: 0</p>
         </div>
-        <div class="sort-container">
-          <i class="fas fa-sort"></i>
-          <select id="sort-filter" onchange="sortProducts()">
-            <option value="default">Сортировка</option>
-            <option value="price-asc">Цена: по возрастанию</option>
-            <option value="price-desc">Цена: по убыванию</option>
-          </select>
+
+        <div class="grid grid-cols-2 gap-4" id="products-container">
+            <!-- Продукты будут добавлены через JavaScript -->
         </div>
-      </div>
     </div>
 
-    <!-- Полноэкранное окно фильтров -->
-    <div id="filters-overlay" class="filters-overlay" onclick="closeFilters()"></div>
-    <div id="filters-panel" class="filters-panel">
-      <button class="filters-close" onclick="closeFilters()"><i class="fas fa-times"></i></button>
-      <h2>Фильтры</h2>
-      <div id="filter-groups"></div>
-      <button class="apply-filters" onclick="applyFilters()">Применить</button>
-    </div>
+    <nav class="navbar">
+        <a href="#" class="nav-item active">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v9h6v-9m-6 0l-2 2m0 0H3m9 9v-9"></path>
+            </svg>
+            <span class="text-xs">Главная</span>
+        </a>
+        <a href="#" class="nav-item">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1116.65 16.65z"></path>
+            </svg>
+            <span class="text-xs">Поиск</span>
+        </a>
+        <a href="#" class="nav-item">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path>
+            </svg>
+            <span class="text-xs">Избранное</span>
+            <span class="badge" id="favorites-count">0</span>
+        </a>
+        <a href="#" class="nav-item">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18l-2 12H5L3 3zm4 16a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z"></path>
+            </svg>
+            <span class="text-xs">Корзина</span>
+            <span class="badge" id="cart-count">0</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zm-4 7a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <span class="text-xs">Профиль</span>
+        </a>
+    </nav>
 
-    <div id="products-container"></div>
-    <div class="pagination" id="pagination"></div>
-  </main>
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.ready();
 
-  <!-- Нижняя панель -->
-  <footer>
-    <p>© 2025 Lavander Shop</p>
-  </footer>
+        let cartItems = [];
+        let favoriteItems = [];
 
-  <script>
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    let allProducts = [];
-    let filteredProducts = [];
-    const ITEMS_PER_PAGE = 15;
-    let currentPage = 1;
+        // Функция для загрузки товаров
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/products');
+                const products = await response.json();
+                const productsContainer = document.getElementById('products-container');
+                productsContainer.innerHTML = '';
 
-    // Инициализация корзины и избранного
-    function initializeCartAndFavorites() {
-      cart = cart.map(item => ({ ...item, quantity: item.quantity || 1 }));
-      localStorage.setItem('cart', JSON.stringify(cart));
-      favorites = favorites.map(item => ({ ...item }));
-      localStorage.setItem('favorites', JSON.stringify(favorites));
-      updateCartCount();
-      updateFavoritesCount();
-    }
+                products.forEach(product => {
+                    const avgRating = product.ratings.length > 0 
+                        ? (product.ratings.reduce((sum, r) => sum + r.rating, 0) / product.ratings.length).toFixed(1) 
+                        : 0;
+                    const ratingCount = product.ratings.length;
 
-    // Обновление счётчика корзины
-    function updateCartCount() {
-      const cartCount = document.getElementById('cart-count');
-      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-      cartCount.textContent = totalItems;
-    }
+                    const stars = Array(5).fill('☆');
+                    for (let i = 0; i < Math.floor(avgRating); i++) {
+                        stars[i] = '★';
+                    }
 
-    // Обновление счётчика избранного
-    function updateFavoritesCount() {
-      const favoritesCount = document.getElementById('favorites-count');
-      favoritesCount.textContent = favorites.length;
-    }
+                    const productCard = `
+                        <div class="product-card border p-4 rounded-lg">
+                            <img src="${product.image}" alt="${product.name}" class="w-full h-40 object-cover mb-2">
+                            <p class="text-gray-600">${product.price} р.</p>
+                            <div class="rating">
+                                ${stars.join('')}
+                                <span class="ml-2 text-gray-600">(${avgRating}, ${ratingCount} отзывов)</span>
+                            </div>
+                            <button class="mt-2 text-gray-600" onclick="addToFavorites(${product.id})">
+                                <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path>
+                                </svg>
+                            </button>
+                            <button class="mt-2 ml-2 bg-blue-500 text-white px-4 py-2 rounded" onclick="addToCart(${product.id})">
+                                В корзину
+                            </button>
+                        </div>`;
+                    productsContainer.innerHTML += productCard;
+                });
 
-    // Добавление/удаление из избранного
-    function toggleFavorite(product, button) {
-      const index = favorites.findIndex(item => item.id === product.id);
-      if (index === -1) {
-        favorites.push(product);
-        button.classList.add('favorited');
-      } else {
-        favorites.splice(index, 1);
-        button.classList.remove('favorited');
-      }
-      localStorage.setItem('favorites', JSON.stringify(favorites));
-      updateFavoritesCount();
-    }
+                document.getElementById('results-count').textContent = `Результатов: ${products.length}`;
+            } catch (error) {
+                console.error('Ошибка загрузки товаров:', error);
+            }
+        }
 
-    // Добавление товара в корзину
-    function addToCart(product, button) {
-      const existingItem = cart.find(item => item.id === product.id);
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        cart.push({ ...product, quantity: 1 });
-      }
-      localStorage.setItem('cart', JSON.stringify(cart));
-      updateCartCount();
+        // Функция добавления в корзину
+        async function addToCart(productId) {
+            try {
+                const response = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user.id })
+                });
+                if (response.ok) {
+                    cartItems = await response.json();
+                    updateCartCount();
+                    tg.showAlert('Товар добавлен в корзину!');
+                }
+            } catch (error) {
+                console.error('Ошибка добавления в корзину:', error);
+                tg.showAlert('Ошибка при добавлении в корзину');
+            }
+        }
 
-      const cartIcon = document.querySelector('.cart-icon');
-      const clonedImage = button.closest('.product-card').querySelector('.product-image, .product-image-placeholder').cloneNode(true);
-      document.body.appendChild(clonedImage);
-      const rect = button.getBoundingClientRect();
-      const cartRect = cartIcon.getBoundingClientRect();
-      clonedImage.style.position = 'fixed';
-      clonedImage.style.top = `${rect.top}px`;
-      clonedImage.style.left = `${rect.left}px`;
-      clonedImage.style.width = `${rect.width}px`;
-      clonedImage.style.height = `${rect.height}px`;
-      clonedImage.style.zIndex = '1000';
-      clonedImage.style.transition = 'all 0.5s ease-in-out';
-      setTimeout(() => {
-        clonedImage.style.top = `${cartRect.top}px`;
-        clonedImage.style.left = `${cartRect.left}px`;
-        clonedImage.style.width = '20px';
-        clonedImage.style.height = '20px';
-        clonedImage.style.opacity = '0';
-      }, 10);
-      setTimeout(() => clonedImage.remove(), 500);
-    }
+        // Функция добавления в избранное
+        async function addToFavorites(productId) {
+            try {
+                const response = await fetch('/api/favorites/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user.id })
+                });
+                if (response.ok) {
+                    favoriteItems = await response.json();
+                    updateFavoritesCount();
+                    tg.showAlert('Товар добавлен в избранное!');
+                }
+            } catch (error) {
+                console.error('Ошибка добавления в избранное:', error);
+                tg.showAlert('Ошибка при добавлении в избранное');
+            }
+        }
 
-    // Загрузка товаров
-    async function loadProducts() {
-      try {
-        const response = await fetch('/api/products');
-        allProducts = await response.json();
-        filteredProducts = [...allProducts];
-        renderFilters();
-        renderPage(1);
-        initializeCartAndFavorites();
-      } catch (error) {
-        console.error('Ошибка загрузки товаров:', error);
-        document.getElementById('products-container').innerHTML = `
-          <div class="text-center text-red-600 py-4">
-            <p>Ошибка загрузки товаров: ${error.message}</p>
-          </div>
-        `;
-      }
-    }
+        // Функция обновления количества в корзине
+        async function updateCartCount() {
+            try {
+                const response = await fetch(`/api/cart/${tg.initDataUnsafe.user.id}`);
+                cartItems = await response.json();
+                document.getElementById('cart-count').textContent = cartItems.length;
+            } catch (error) {
+                console.error('Ошибка обновления корзины:', error);
+            }
+        }
 
-    // Фильтрация товаров
-    function filterProducts() {
-      const selectedTags = Array.from(document.querySelectorAll('.filter-option input:checked')).map(input => input.value.toLowerCase());
-      const priceRange = {
-        min: parseFloat(document.getElementById('price-min')?.value || 0),
-        max: parseFloat(document.getElementById('price-max')?.value || Infinity)
-      };
-      filteredProducts = allProducts.filter(product => {
-        const tags = product.tags ? product.tags.map(tag => tag.toLowerCase()) : [];
-        const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => tags.includes(tag));
-        const matchesPrice = product.price >= priceRange.min && product.price <= priceRange.max;
-        return matchesTags && matchesPrice;
-      });
-      renderPage(1);
-    }
+        // Функция обновления количества в избранном
+        async function updateFavoritesCount() {
+            try {
+                const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user.id}`);
+                favoriteItems = await response.json();
+                document.getElementById('favorites-count').textContent = favoriteItems.length;
+            } catch (error) {
+                console.error('Ошибка обновления избранного:', error);
+            }
+        }
 
-    // Сортировка товаров
-    function sortProducts() {
-      const sortFilter = document.getElementById('sort-filter').value;
-      let sortedProducts = [...filteredProducts];
-      if (sortFilter === 'price-asc') {
-        sortedProducts.sort((a, b) => a.price - b.price);
-      } else if (sortFilter === 'price-desc') {
-        sortedProducts.sort((a, b) => b.price - a.price);
-      }
-      filteredProducts = sortedProducts;
-      renderPage(currentPage);
-    }
-
-    // Отрисовка страницы товаров
-    function renderPage(page) {
-      currentPage = page;
-      const start = (page - 1) * ITEMS_PER_PAGE;
-      const end = start + ITEMS_PER_PAGE;
-      const productsToShow = filteredProducts.slice(start, end);
-
-      const productsContainer = document.getElementById('products-container');
-      productsContainer.innerHTML = '';
-      document.getElementById('results-count').textContent = `Результатов: ${filteredProducts.length}`;
-
-      if (productsToShow.length === 0) {
-        productsContainer.innerHTML = `
-          <div class="text-center py-4">
-            <p>Товаров не найдено 😔</p>
-          </div>
-        `;
-        return;
-      }
-
-      productsToShow.forEach(product => {
-        const productCard = document.createElement('a');
-        productCard.href = `#product-${product.id}`;
-        productCard.className = 'product-card';
-        const images = product.image_url ? product.image_url.split(',') : [];
-        const firstImage = images[0] || '';
-        const imageContent = firstImage
-          ? `<img src="${firstImage}" alt="${product.name}" class="product-image">`
-          : `<div class="product-image-placeholder"><span><i class="fas fa-image"></i></span></div>`;
-        const isFavorited = favorites.some(item => item.id === product.id);
-        productCard.innerHTML = `
-          ${imageContent}
-          <div class="product-info">
-            <span class="product-price">${product.price} грн</span>
-            <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="event.preventDefault(); toggleFavorite(${JSON.stringify(product)}, this)">
-              <i class="fas fa-heart"></i>
-            </button>
-          </div>
-        `;
-        productCard.addEventListener('click', (e) => {
-          if (e.target.closest('.favorite-btn')) return;
-          e.preventDefault();
-          openProductFullscreen(product);
+        // Активация кнопок навигации
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(event) {
+                event.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
         });
-        productsContainer.appendChild(productCard);
-      });
 
-      renderPagination();
-    }
-
-    // Отрисовка пагинации
-    function renderPagination() {
-      const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-      const pagination = document.getElementById('pagination');
-      pagination.innerHTML = '';
-
-      for (let i = 1; i <= totalPages; i++) {
-        const button = document.createElement('button');
-        button.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-        button.textContent = i;
-        button.onclick = () => renderPage(i);
-        pagination.appendChild(button);
-      }
-    }
-
-    // Отрисовка фильтров
-    function renderFilters() {
-      const tags = [...new Set(allProducts.flatMap(p => p.tags || []))];
-      const prices = allProducts.map(p => p.price);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-
-      const filterGroups = document.getElementById('filter-groups');
-      filterGroups.innerHTML = `
-        <div class="filter-group">
-          <h3>Теги</h3>
-          ${tags.map(tag => `
-            <div class="filter-option">
-              <input type="checkbox" value="${tag}" id="tag-${tag}">
-              <label for="tag-${tag}">${tag}</label>
-            </div>
-          `).join('')}
-        </div>
-        <div class="filter-group">
-          <h3>Цена</h3>
-          <div>
-            <label for="price-min">От:</label>
-            <input type="number" id="price-min" value="${minPrice}" min="${minPrice}" max="${maxPrice}">
-          </div>
-          <div>
-            <label for="price-max">До:</label>
-            <input type="number" id="price-max" value="${maxPrice}" min="${minPrice}" max="${maxPrice}">
-          </div>
-        </div>
-      `;
-    }
-
-    // Открытие/закрытие фильтров
-    function toggleFilters() {
-      const overlay = document.getElementById('filters-overlay');
-      const panel = document.getElementById('filters-panel');
-      overlay.style.display = 'flex';
-      panel.style.display = 'block';
-    }
-
-    function closeFilters() {
-      const overlay = document.getElementById('filters-overlay');
-      const panel = document.getElementById('filters-panel');
-      overlay.style.display = 'none';
-      panel.style.display = 'none';
-    }
-
-    function applyFilters() {
-      filterProducts();
-      closeFilters();
-    }
-
-    // Открытие полноэкранного вида товара
-    function openProductFullscreen(product) {
-      const fullscreen = document.getElementById('product-fullscreen');
-      const images = product.image_url ? product.image_url.split(',') : [];
-      const firstImage = images[0] || '';
-      let currentImageIndex = 0;
-
-      const imageContent = firstImage
-        ? `<img src="${firstImage}" alt="${product.name}" class="gallery-image">`
-        : `<div class="product-image-placeholder"><span><i class="fas fa-image"></i></span></div>`;
-
-      const tagsContent = product.tags && product.tags.length
-        ? product.tags.map(tag => `<span class="tag">${tag}</span>`).join('')
-        : 'Нет тегов';
-
-      fullscreen.innerHTML = `
-        <button class="back-button" onclick="closeProductFullscreen()"><i class="fas fa-arrow-left"></i> Назад</button>
-        <div class="image-gallery">
-          ${imageContent}
-          ${images.length > 1 ? `
-            <button class="gallery-nav prev" onclick="changeImage(-1)">←</button>
-            <button class="gallery-nav next" onclick="changeImage(1)">→</button>
-          ` : ''}
-        </div>
-        <div class="product-info-full">
-          <h2>${product.name}</h2>
-          <p class="price">${product.price} грн</p>
-          <div class="quantity-control">
-            <button onclick="changeQuantity(-1)">-</button>
-            <span id="quantity">1</span>
-            <button onclick="changeQuantity(1)">+</button>
-          </div>
-          <p class="description">${product.description || 'Нет описания'}</p>
-          <div class="tags">${tagsContent}</div>
-          <div class="product-buttons">
-            <button class="product-button" data-product='${JSON.stringify(product)}'>Добавить в корзину</button>
-            <button class="buy-now-button" onclick="buyNow('${product.name}')">Купить сейчас</button>
-          </div>
-        </div>
-      `;
-      fullscreen.style.display = 'block';
-
-      fullscreen.querySelectorAll('.product-button').forEach(button => {
-        button.addEventListener('click', () => {
-          const prod = JSON.parse(button.getAttribute('data-product'));
-          prod.quantity = parseInt(document.getElementById('quantity').textContent);
-          addToCart(prod, button);
-        });
-      });
-
-      window.changeImage = (direction) => {
-        currentImageIndex = (currentImageIndex + direction + images.length) % images.length;
-        const galleryImage = fullscreen.querySelector('.gallery-image');
-        galleryImage.src = images[currentImageIndex];
-      };
-
-      window.changeQuantity = (change) => {
-        const quantitySpan = document.getElementById('quantity');
-        let quantity = parseInt(quantitySpan.textContent);
-        quantity = Math.max(1, quantity + change);
-        quantitySpan.textContent = quantity;
-      };
-    }
-
-    // Закрытие полноэкранного вида
-    function closeProductFullscreen() {
-      const fullscreen = document.getElementById('product-fullscreen');
-      fullscreen.style.display = 'none';
-    }
-
-    // Имитация покупки
-    function buyNow(productName) {
-      alert(`Спасибо за покупку ${productName}! Оформление скоро будет доступно.`);
-    }
-
-    // Загружаем товары при загрузке страницы
-    window.onload = loadProducts;
-  </script>
+        // Загрузка данных при старте
+        window.onload = () => {
+            loadProducts();
+            updateCartCount();
+            updateFavoritesCount();
+        };
+    </script>
 </body>
 </html>
