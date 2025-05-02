@@ -9,13 +9,15 @@
         body {
             padding-bottom: 60px;
             font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
         }
         .navbar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background-color: #4A90E2;
+            background-color: #ffffff;
+            border-top: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -28,12 +30,12 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: white;
+            color: #4b5563;
             padding: 8px;
             transition: all 0.3s ease;
         }
         .nav-item.active {
-            color: black;
+            color: #111827;
         }
         .nav-item.active::before {
             content: '';
@@ -43,7 +45,8 @@
             transform: translate(-50%, -50%);
             width: 40px;
             height: 40px;
-            background-color: white;
+            background-color: #ffffff;
+            border: 2px solid #111827;
             border-radius: 50%;
             z-index: -1;
         }
@@ -53,24 +56,30 @@
         }
         .badge {
             position: absolute;
-            top: 0;
-            right: 0;
-            background-color: #FF6B6B;
+            top: -4px;
+            right: -8px;
+            background-color: #ef4444;
             color: white;
             border-radius: 50%;
             padding: 2px 6px;
             font-size: 12px;
         }
         .product-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 16px;
             text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .product-title {
             margin: 0 auto;
             text-align: center;
+            font-weight: 600;
         }
         .product-description {
             margin: 0 auto;
             text-align: center;
+            color: #6b7280;
         }
         .rating {
             display: flex;
@@ -79,7 +88,7 @@
             margin-top: 8px;
         }
         .star {
-            color: #FFD700;
+            color: #f59e0b;
             font-size: 16px;
         }
     </style>
@@ -87,7 +96,7 @@
 <body>
     <div class="container mx-auto p-4">
         <header class="flex justify-center items-center mb-4">
-            <h1 class="text-2xl font-bold">Магазин Lavander</h1>
+            <h1 class="text-2xl font-bold text-gray-800">Магазин Lavander</h1>
         </header>
 
         <div class="mb-4">
@@ -101,61 +110,58 @@
     </div>
 
     <nav class="navbar">
-        <a href="#" class="nav-item active">
+        <a href="#" class="nav-item active" id="home-nav">
             <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v9h6v-9m-6 0l-2 2m0 0H3m9 9v-9"></path>
             </svg>
-            <span class="text-xs">Главная</span>
         </a>
         <a href="#" class="nav-item">
             <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1116.65 16.65z"></path>
             </svg>
-            <span class="text-xs">Поиск</span>
         </a>
         <a href="#" class="nav-item">
             <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path>
             </svg>
-            <span class="text-xs">Избранное</span>
             <span class="badge" id="favorites-count">0</span>
         </a>
         <a href="#" class="nav-item">
             <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18l-2 12H5L3 3zm4 16a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z"></path>
             </svg>
-            <span class="text-xs">Корзина</span>
             <span class="badge" id="cart-count">0</span>
         </a>
         <a href="profile.html" class="nav-item">
             <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zm-4 7a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
             </svg>
-            <span class="text-xs">Профиль</span>
         </a>
     </nav>
 
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Инициализация Telegram Web App
         const tg = window.Telegram.WebApp;
         tg.ready();
+        tg.expand();
 
         let cartItems = [];
         let favoriteItems = [];
 
-        // Функция для загрузки товаров
         async function loadProducts() {
             try {
                 const response = await fetch('/api/products');
+                if (!response.ok) throw new Error('Ошибка загрузки товаров');
                 const products = await response.json();
                 const productsContainer = document.getElementById('products-container');
                 productsContainer.innerHTML = '';
 
+                document.getElementById('results-count').textContent = `Результатов: ${products.length}`;
                 products.forEach(product => {
-                    const avgRating = product.ratings.length > 0 
+                    const avgRating = product.ratings && product.ratings.length > 0 
                         ? (product.ratings.reduce((sum, r) => sum + r.rating, 0) / product.ratings.length).toFixed(1) 
                         : 0;
-                    const ratingCount = product.ratings.length;
+                    const ratingCount = product.ratings ? product.ratings.length : 0;
 
                     const stars = Array(5).fill('☆');
                     for (let i = 0; i < Math.floor(avgRating); i++) {
@@ -163,38 +169,37 @@
                     }
 
                     const productCard = `
-                        <div class="product-card border p-4 rounded-lg">
-                            <img src="${product.image}" alt="${product.name}" class="w-full h-40 object-cover mb-2">
+                        <div class="product-card">
+                            <img src="${product.image || 'https://via.placeholder.com/150'}" alt="${product.name}" class="w-full h-40 object-cover mb-2 rounded-lg">
+                            <p class="text-gray-800 font-medium">${product.name}</p>
                             <p class="text-gray-600">${product.price} р.</p>
                             <div class="rating">
                                 ${stars.join('')}
                                 <span class="ml-2 text-gray-600">(${avgRating}, ${ratingCount} отзывов)</span>
                             </div>
-                            <button class="mt-2 text-gray-600" onclick="addToFavorites(${product.id})">
+                            <button class="mt-2 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300" onclick="addToFavorites(${product.id})">
                                 <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path>
                                 </svg>
                             </button>
-                            <button class="mt-2 ml-2 bg-blue-500 text-white px-4 py-2 rounded" onclick="addToCart(${product.id})">
+                            <button class="mt-2 ml-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onclick="addToCart(${product.id})">
                                 В корзину
                             </button>
                         </div>`;
                     productsContainer.innerHTML += productCard;
                 });
-
-                document.getElementById('results-count').textContent = `Результатов: ${products.length}`;
             } catch (error) {
                 console.error('Ошибка загрузки товаров:', error);
+                document.getElementById('products-container').innerHTML = '<p class="text-red-500">Не удалось загрузить товары</p>';
             }
         }
 
-        // Функция добавления в корзину
         async function addToCart(productId) {
             try {
                 const response = await fetch('/api/cart/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user.id })
+                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user?.id || 'default' })
                 });
                 if (response.ok) {
                     cartItems = await response.json();
@@ -207,13 +212,12 @@
             }
         }
 
-        // Функция добавления в избранное
         async function addToFavorites(productId) {
             try {
                 const response = await fetch('/api/favorites/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user.id })
+                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user?.id || 'default' })
                 });
                 if (response.ok) {
                     favoriteItems = await response.json();
@@ -226,38 +230,37 @@
             }
         }
 
-        // Функция обновления количества в корзине
         async function updateCartCount() {
             try {
-                const response = await fetch(`/api/cart/${tg.initDataUnsafe.user.id}`);
+                const response = await fetch(`/api/cart/${tg.initDataUnsafe.user?.id || 'default'}`);
                 cartItems = await response.json();
-                document.getElementById('cart-count').textContent = cartItems.length;
+                document.getElementById('cart-count').textContent = cartItems.length || 0;
             } catch (error) {
                 console.error('Ошибка обновления корзины:', error);
             }
         }
 
-        // Функция обновления количества в избранном
         async function updateFavoritesCount() {
             try {
-                const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user.id}`);
+                const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user?.id || 'default'}`);
                 favoriteItems = await response.json();
-                document.getElementById('favorites-count').textContent = favoriteItems.length;
+                document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
             } catch (error) {
                 console.error('Ошибка обновления избранного:', error);
             }
         }
 
-        // Активация кнопок навигации
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function(event) {
                 event.preventDefault();
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
+                if (this.id === 'home-nav') {
+                    loadProducts(); // Перезагрузка товаров при клике на "Главная"
+                }
             });
         });
 
-        // Загрузка данных при старте
         window.onload = () => {
             loadProducts();
             updateCartCount();
