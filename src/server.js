@@ -49,6 +49,18 @@ if (!botToken || adminIds.length === 0) {
     console.error('Ошибка: BOT_TOKEN или ADMIN_IDS не заданы в переменных окружения');
 }
 
+// Middleware для проверки прав админа
+function checkAdmin(req, res, next) {
+    const userId = req.body.userId || req.query.userId;
+    if (!userId) {
+        return res.status(400).json({ error: 'userId не указан' });
+    }
+    if (!adminIds.includes(userId.toString())) {
+        return res.status(403).json({ error: 'Доступ запрещён: вы не админ' });
+    }
+    next();
+}
+
 // Маршрут для получения всех продуктов
 app.get('/api/products', async (req, res) => {
     console.log('Запрос на /api/products');
@@ -76,7 +88,6 @@ app.post('/api/orders', async (req, res) => {
             throw new Error('Отсутствуют обязательные поля: userId, orderDetails или userInfo');
         }
 
-        // Сохранение заказа в Supabase
         const { data, error } = await supabase
             .from('orders')
             .insert({
@@ -92,7 +103,6 @@ app.post('/api/orders', async (req, res) => {
         }
         console.log('Заказ успешно сохранён:', data);
 
-        // Формирование сообщения для админа
         const itemsText = orderDetails.map(item => 
             `Товар: ${item.name || 'Без названия'}, Цена: ${item.price || 0} грн, Кол-во: ${item.quantity || 1}`
         ).join('\n');
@@ -105,7 +115,6 @@ app.post('/api/orders', async (req, res) => {
         `;
         const message = `Новый заказ:\n\n${itemsText}\n\n${userText}`;
 
-        // Отправка уведомлений всем админам
         for (const adminId of adminIds) {
             const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                 method: 'POST',
@@ -126,6 +135,66 @@ app.post('/api/orders', async (req, res) => {
     } catch (error) {
         console.error('Ошибка обработки заказа:', error.message);
         res.status(500).json({ error: `Ошибка сервера при обработке заказа: ${error.message}` });
+    }
+});
+
+// Маршрут для открытия магазина (админ)
+app.post('/api/admin/open-store', checkAdmin, async (req, res) => {
+    console.log('Запрос на /api/admin/open-store от пользователя:', req.body.userId);
+    try {
+        const { data, error } = await supabase
+            .from('settings')
+            .update({ store_open: true })
+            .eq('id', 1)
+            .select();
+        if (error) {
+            console.error('Ошибка Supabase при открытии магазина:', error);
+            throw error;
+        }
+        console.log('Магазин успешно открыт:', data);
+
+        for (const adminId of adminIds) {
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: adminId,
+                    text: `Магазин открыт пользователем ${req.body.userId}!`
+                })
+            });
+        }
+
+        res.json({ success: true, message: 'Магазин открыт' });
+    } catch (error) {
+        console.error('Ошибка при открытии магазина:', error.message);
+        res.status(500).json({ error: `Ошибка сервера: ${error.message}` });
+    }
+});
+
+// Маршрут для доступа к админ-панели (админ)
+app.get('/api/admin/panel', checkAdmin, async (req, res) => {
+    console.log('Запрос на /api/admin/panel от пользователя:', req.query.userId);
+    try {
+        const { data: products, error: productsError } = await supabase
+            .from('products')
+            .select('*');
+        if (productsError) throw productsError;
+
+        const { data: orders, error: ordersError } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10);
+        if (ordersError) throw ordersError;
+
+        res.json({
+            success: true,
+            products,
+            orders
+        });
+    } catch (error) {
+        console.error('Ошибка при загрузке данных админ-панели:', error.message);
+        res.status(500).json({ error: `Ошибка сервера: ${error.message}` });
     }
 });
 

@@ -4,149 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Корзина - Магазин Lavander</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Mono:ital,wght@0,200..700;1,200..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 70px;
-            overflow-x: hidden;
-        }
-        .header {
-            background: linear-gradient(90deg, #6b7280 0%, #4b5563 100%);
-            color: white;
-            padding: 1rem;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        .cart-container {
-            padding: 1rem;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .cart-item {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        .cart-item img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .cart-details {
-            flex-grow: 1;
-            margin-left: 1rem;
-        }
-        .cart-details p {
-            margin: 0.25rem 0;
-        }
-        .btn-remove {
-            background-color: #ef4444;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-remove:hover {
-            background-color: #dc2626;
-        }
-        .btn-order {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            max-width: 300px;
-            margin: 1rem auto;
-            display: block;
-        }
-        .btn-order:hover {
-            background-color: #2563eb;
-        }
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: #ffffff;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 60px;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
-            z-index: 1000;
-        }
-        .nav-item {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6b7280;
-            padding: 0.5rem;
-            transition: color 0.3s ease;
-        }
-        .nav-item.active {
-            color: #1f2937;
-        }
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            background-color: #f3f4f6;
-            border-radius: 50%;
-            z-index: -1;
-        }
-        .nav-item i {
-            font-size: 1.5rem;
-        }
-        .order-form {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        .order-form label {
-            display: block;
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
-            color: #1f2937;
-        }
-        .order-form input, .order-form select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            margin-bottom: 0.75rem;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header class="header">
@@ -294,7 +156,6 @@
                 floor: document.getElementById('floor').value || 'Не указан'
             };
 
-            // Проверка обязательных полей
             if (!userInfo.fullName || !userInfo.phone || !userInfo.paymentType || !userInfo.region || !userInfo.city || !userInfo.street || !userInfo.house) {
                 tg.showAlert('Пожалуйста, заполните все обязательные поля!');
                 return;
@@ -320,7 +181,6 @@
                     cartItems = [];
                     saveLocalData();
                     displayCart();
-                    // Очистка формы после успешного заказа
                     document.getElementById('fullName').value = '';
                     document.getElementById('phone').value = '';
                     document.getElementById('paymentType').value = '';

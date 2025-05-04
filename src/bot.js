@@ -24,8 +24,15 @@ bot.start(async (ctx) => {
   logger.info("Received /start command", { userId });
 
   // Проверяем админ-права
-  const isAdmin = await isAdminUser(userId);
-  logger.info("Admin check completed", { userId, isAdmin });
+  let isAdmin;
+  try {
+    isAdmin = await isAdminUser(userId);
+    logger.info("Admin check completed", { userId, isAdmin });
+  } catch (err) {
+    logger.error("Error checking admin status", { userId, error: err.message });
+    await ctx.reply("❌ Ошибка проверки прав админа: " + err.message);
+    return;
+  }
 
   // Повторно устанавливаем кнопку "Open App" для этого чата
   try {
@@ -48,7 +55,7 @@ bot.start(async (ctx) => {
 
   if (isAdmin) {
     replyMarkup = {
-      inline_keyboard: inlineButtons, // Сохраняем inline-кнопку
+      inline_keyboard: inlineButtons,
       keyboard: [
         ["📦 Парсер товаров", "✏️ Редактировать товары"],
         ["👁️ Управление видимостью", "👤 Добавить админа"],
@@ -84,7 +91,7 @@ bot.hears("⬅️ Скрыть меню", async (ctx) => {
     logger.info("Reply keyboard hidden", { userId });
   } catch (err) {
     logger.error("Error hiding menu", { error: err.message, userId });
-    await ctx.reply("❌ Ошибка: " + err.message);
+    await ctx.reply("❌ Ошибка скрытия меню: " + err.message);
   }
 });
 
@@ -96,6 +103,7 @@ bot.hears("📦 Парсер товаров", async (ctx) => {
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for parse_products", { userId });
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
@@ -108,13 +116,15 @@ bot.hears("📦 Парсер товаров", async (ctx) => {
   }
 });
 
+// Обработка CSV-файлов
 bot.on("document", async (ctx) => {
   const userId = ctx.from.id.toString();
-  logger.info("Received document", { userId });
+  logger.info("Received document", { userId, fileName: ctx.message.document.file_name });
 
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for document upload", { userId });
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
@@ -133,13 +143,14 @@ bot.on("document", async (ctx) => {
     if (error) {
       logger.error("Supabase error inserting products", { error, userId });
       await ctx.reply("❌ Ошибка сохранения товаров: " + error.message);
-    } else {
-      await resetProductsCache();
-      await ctx.reply(
-        `✅ Добавлено ${newProducts.length} товаров! Используйте "Управление видимостью" для отображения.`
-      );
-      logger.info("Products inserted", { userId, count: newProducts.length });
+      return;
     }
+
+    await resetProductsCache();
+    await ctx.reply(
+      `✅ Добавлено ${newProducts.length} товаров! Используйте "Управление видимостью" для отображения.`
+    );
+    logger.info("Products inserted", { userId, count: newProducts.length });
   } catch (err) {
     logger.error("Error processing CSV", { error: err.message, userId });
     await ctx.reply("❌ Ошибка обработки файла: " + err.message);
@@ -154,6 +165,7 @@ bot.hears("✏️ Редактировать товары", async (ctx) => {
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for edit_products", { userId });
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
@@ -161,6 +173,7 @@ bot.hears("✏️ Редактировать товары", async (ctx) => {
     await ctx.reply(
       "✏️ Введите: id,название,цена,описание,категория,остаток,теги (оставьте пустым для текущего значения)\nПример: 123,Простыня,1500,Белая простыня,постель,10,хлопок"
     );
+    logger.info("Prompted for product edit", { userId });
   } catch (err) {
     logger.error("Error in edit_products", { error: err.message, userId });
     await ctx.reply("❌ Ошибка: " + err.message);
@@ -175,11 +188,13 @@ bot.hears("👁️ Управление видимостью", async (ctx) => {
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for toggle_visibility", { userId });
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
   try {
     await ctx.reply("👁️ Введите: visibility,id,true/false\nПример: visibility,123,true");
+    logger.info("Prompted for visibility toggle", { userId });
   } catch (err) {
     logger.error("Error in toggle_visibility", { error: err.message, userId });
     await ctx.reply("❌ Ошибка: " + err.message);
@@ -194,11 +209,13 @@ bot.hears("👤 Добавить админа", async (ctx) => {
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for add_admin", { userId });
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
   try {
     await ctx.reply("👤 Введите Telegram ID нового админа (например, 123456789)");
+    logger.info("Prompted for admin ID", { userId });
   } catch (err) {
     logger.error("Error in add_admin", { error: err.message, userId });
     await ctx.reply("❌ Ошибка: " + err.message);
@@ -213,7 +230,7 @@ bot.hears("📋 Просмотреть товары", async (ctx) => {
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for view_products", { userId });
-    await ctx.reply("🚫 Доступ запрещён");
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
@@ -250,11 +267,13 @@ bot.hears("💰 Массовая наценка", async (ctx) => {
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for bulk_price", { userId });
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
   try {
     await ctx.reply("💰 Введите: bulk,percent/fixed,значение\nПример: bulk,percent,10");
+    logger.info("Prompted for bulk price update", { userId });
   } catch (err) {
     logger.error("Error in bulk_price", { error: err.message, userId });
     await ctx.reply("❌ Ошибка: " + err.message);
@@ -264,25 +283,26 @@ bot.hears("💰 Массовая наценка", async (ctx) => {
 // Обработка текстовых команд
 bot.on("text", async (ctx) => {
   const userId = ctx.from.id.toString();
-  const text = ctx.message.text;
+  const text = ctx.message.text.trim();
   logger.info("Received text message", { userId, text });
 
   const isAdmin = await isAdminUser(userId);
   if (!isAdmin) {
     logger.warn("Admin access denied for text command", { userId });
+    await ctx.reply("🚫 Доступ запрещён: вы не админ");
     return;
   }
 
   try {
     // Проверяем формат команды редактирования (id,название,цена,...)
-    const editMatch = text.match(/^(\d+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*(?:(\d+),)?\s*(.*)?$/);
+    const editMatch = text.match(/^(\d+),\s*([^,]*),\s*([^,]*),\s*([^,]*),\s*([^,]*),\s*(\d*),\s*(.*)$/);
     if (editMatch) {
       const [, id, name, price, description, category, stock, tags] = editMatch;
       const updatedProduct = {
-        name,
+        name: name.trim() || undefined,
         price: price && !isNaN(parseFloat(price)) ? parseFloat(price) : undefined,
-        description,
-        category,
+        description: description.trim() || undefined,
+        category: category.trim() || undefined,
         stock: stock && !isNaN(parseInt(stock)) ? parseInt(stock) : undefined,
         tags: tags ? tags.split(/[;,\s]+/).filter((tag) => tag) : undefined,
       };
@@ -292,15 +312,25 @@ bot.on("text", async (ctx) => {
     } else if (text.startsWith("bulk")) {
       const [, type, value] = text.split(",");
       const parsedValue = parseFloat(value);
-      await bulkUpdatePrices(type, parsedValue);
+      if (isNaN(parsedValue) || !["percent", "fixed"].includes(type.trim())) {
+        await ctx.reply("❌ Неверный формат. Пример: bulk,percent,10");
+        logger.warn("Invalid bulk price format", { userId, text });
+        return;
+      }
+      await bulkUpdatePrices(type.trim(), parsedValue);
       await ctx.reply("✅ Цены обновлены!");
-      logger.info("Prices updated in bulk", { userId, type, value });
+      logger.info("Prices updated in bulk", { userId, type: type.trim(), value: parsedValue });
     } else if (text.startsWith("visibility")) {
       const [, id, state] = text.split(",");
-      const isVisible = state.toLowerCase() === "true";
-      await toggleProductVisibility(id, isVisible);
+      const isVisible = state.trim().toLowerCase() === "true";
+      if (!id || !["true", "false"].includes(state.trim().toLowerCase())) {
+        await ctx.reply("❌ Неверный формат. Пример: visibility,123,true");
+        logger.warn("Invalid visibility format", { userId, text });
+        return;
+      }
+      await toggleProductVisibility(id.trim(), isVisible);
       await ctx.reply(`✅ Видимость товара ${id} установлена в ${isVisible ? "вкл" : "выкл"}`);
-      logger.info("Visibility updated", { userId, id, isVisible });
+      logger.info("Visibility updated", { userId, id: id.trim(), isVisible });
     } else if (text.match(/^\d+$/)) {
       await addAdmin(text);
       await ctx.reply(`✅ Админ с ID ${text} добавлен! Новый админ должен отправить /start`);
@@ -311,6 +341,6 @@ bot.on("text", async (ctx) => {
     }
   } catch (err) {
     logger.error("Error in text handler", { error: err.message, userId, text });
-    await ctx.reply("❌ Ошибка: " + err.message);
+    await ctx.reply("❌ Ошибка обработки команды: " + err.message);
   }
 });

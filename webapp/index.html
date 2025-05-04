@@ -4,364 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин Lavander</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Mono:ital,wght@0,200..700;1,200..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 70px;
-            overflow-x: hidden;
-        }
-        .header {
-            background: linear-gradient(90deg, #6b7280 0%, #4b5563 100%);
-            color: white;
-            padding: 1rem;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        .subheader {
-            text-align: center;
-            margin: 1rem 0;
-            padding: 0 1rem;
-        }
-        .subheader h2 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        .subheader p {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        .settings {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem;
-            background-color: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
-            position: sticky;
-            top: 60px;
-            z-index: 40;
-            align-items: center;
-        }
-        .settings select {
-            padding: 0.25rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            margin-left: 0.25rem;
-        }
-        .settings i {
-            margin-right: 0.25rem;
-            color: #6b7280;
-        }
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            padding: 1rem;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .product-card {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease-in-out;
-            cursor: pointer;
-            position: relative;
-            text-align: center;
-        }
-        .product-card:hover {
-            transform: translateY(-3px);
-        }
-        .product-image {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .product-name {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #1f2937;
-            margin: 0.5rem 0;
-        }
-        .product-description {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-            line-height: 1.2;
-        }
-        .product-price {
-            font-size: 0.875rem;
-            color: #4b5563;
-            font-weight: 600;
-        }
-        .product-rating {
-            font-size: 0.75rem;
-            color: #f59e0b;
-            margin-bottom: 0.5rem;
-        }
-        .favorite-icon {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            font-size: 1.2rem;
-            color: #6b7280;
-            cursor: pointer;
-        }
-        .favorite-icon.active {
-            color: #ef4444;
-        }
-        .btn-cart-card {
-            width: 100%;
-            padding: 0.5rem;
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
-            margin-top: 0.5rem;
-        }
-        .btn-cart-card:hover {
-            background-color: #2563eb;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 1.5rem;
-            max-width: 90%;
-            max-height: 90%;
-            overflow-y: auto;
-            transform: scale(0.8);
-            transition: transform 0.3s ease-in-out;
-            text-align: center;
-        }
-        .modal.active .modal-content {
-            transform: scale(1);
-        }
-        .modal-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .modal-image.active {
-            width: 100%;
-            height: auto;
-            max-height: 80vh;
-        }
-        .modal-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 1rem 0;
-        }
-        .modal-description {
-            font-size: 0.875rem;
-            color: #6b7280;
-            margin-bottom: 1rem;
-        }
-        .modal-price {
-            font-size: 1rem;
-            color: #4b5563;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        .modal-quantity {
-            margin-bottom: 1rem;
-        }
-        .modal-quantity select {
-            padding: 0.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
-        .modal-actions button {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin: 0.25rem 0;
-            transition: background-color 0.2s;
-        }
-        .btn-favorite-modal {
-            background-color: #e5e7eb;
-            color: #4b5563;
-        }
-        .btn-favorite-modal:hover {
-            background-color: #d1d5db;
-        }
-        .btn-cart-modal {
-            background-color: #3b82f6;
-            color: white;
-        }
-        .btn-cart-modal:hover {
-            background-color: #2563eb;
-        }
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 1.5rem;
-            color: #6b7280;
-            cursor: pointer;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 1rem;
-        }
-        .pagination button {
-            padding: 0.5rem 1rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            background-color: #ffffff;
-            cursor: pointer;
-        }
-        .pagination button:disabled {
-            background-color: #e5e7eb;
-            cursor: not-allowed;
-        }
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: #ffffff;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 60px;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
-            z-index: 1000;
-        }
-        .nav-item {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6b7280;
-            padding: 0.5rem;
-            transition: color 0.3s ease;
-        }
-        .nav-item.active {
-            color: #1f2937;
-        }
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            background-color: #f3f4f6;
-            border-radius: 50%;
-            z-index: -1;
-        }
-        .nav-item i {
-            font-size: 1.5rem;
-        }
-        .badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        .error-message {
-            color: #ef4444;
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.875rem;
-        }
-        .search-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #ffffff;
-            z-index: 1000;
-            padding: 2rem;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .search-modal.active {
-            display: block;
-        }
-        .search-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            font-size: 1rem;
-            margin-bottom: 1rem;
-        }
-        .search-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 1.5rem;
-            color: #6b7280;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header class="header">
-        <h1>Магазин Lavander</h1>
+        <h1>Главная - Lavander Shop</h1>
     </header>
 
     <div class="container mx-auto">
         <div class="subheader">
-            <h2>Магазин постельного белья</h2>
-            <p id="results-count">Результатов: 0</p>
+            <p id="results-count">Кол-во товаров всего: 0</p>
         </div>
 
         <div class="settings">
             <div>
                 <i class="fas fa-list"></i>
                 <select id="items-per-page" onchange="updateItemsPerPage()">
+                    <option value="5">5</option>
                     <option value="10">10</option>
-                    <option value="15">15</option>
-                    <option value="20">20</option>
-                    <option value="25" selected>25</option>
+                    <option value="15" selected>15</option>
                 </select>
             </div>
             <div>
@@ -419,7 +84,7 @@
         let favoriteItems = [];
         let allProducts = [];
         let currentPage = 1;
-        let itemsPerPage = 25;
+        let itemsPerPage = 15;
         const userId = tg.initDataUnsafe.user?.id || 'default';
 
         function loadLocalData() {
@@ -654,11 +319,18 @@
             `;
             document.body.appendChild(modal);
             setTimeout(() => modal.classList.add('active'), 10);
+
+            const modalImage = document.getElementById('modal-image');
+            modalImage.addEventListener('click', () => {
+                modalImage.classList.toggle('active');
+            });
         }
 
         function closeModal() {
             const modal = document.getElementById('modal');
             if (modal) {
+                const modalImage = document.getElementById('modal-image');
+                if (modalImage) modalImage.classList.remove('active');
                 modal.classList.remove('active');
                 setTimeout(() => modal.remove(), 300);
             }

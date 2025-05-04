@@ -16,14 +16,18 @@
             overflow-x: hidden;
         }
         .header {
-            background: linear-gradient(90deg, #6b7280 0%, #4b5563 100%);
-            color: white;
+            color: rgb(0, 0, 0);
             padding: 1rem;
             text-align: center;
             position: sticky;
             top: 0;
             z-index: 50;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 16px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(6.8px);
+            -webkit-backdrop-filter: blur(6.8px);
+            font-family: "Cascadia Mono", sans-serif;
         }
         .header h1 {
             font-size: 1.5rem;
