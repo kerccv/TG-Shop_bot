@@ -1,9 +1,11 @@
-require('dotenv').config();
-const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
-const cors = require('cors');
-const path = require('path');
-const fetch = require('node-fetch');
+import dotenv from 'dotenv';
+import express from 'express';
+import { createClient } from '@supabase/supabase-js';
+import cors from 'cors';
+import path from 'path';
+import fetch from 'node-fetch';
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -19,7 +21,7 @@ const botToken = process.env.BOT_TOKEN;
 const adminChatId = process.env.ADMIN_CHAT_ID;
 
 // Статические файлы (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Маршрут для получения всех продуктов
 app.get('/api/products', async (req, res) => {
