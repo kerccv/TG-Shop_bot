@@ -30,18 +30,7 @@
             font-weight: 700;
             margin: 0;
         }
-        .subheader {
-            text-align: center;
-            margin: 1rem 0;
-            padding: 0 1rem;
-        }
-        .subheader p {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        .favorites-grid {
-            display: grid;
-            gap: 1rem;
+        .favorites-container {
             padding: 1rem;
             max-width: 800px;
             margin: 0 auto;
@@ -50,47 +39,32 @@
             background-color: #ffffff;
             border-radius: 8px;
             padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease-in-out;
-            position: relative;
-            text-align: center;
         }
-        .favorite-item:hover {
-            transform: translateY(-3px);
-        }
-        .favorite-image {
-            width: 100%;
-            height: 150px;
+        .favorite-item img {
+            width: 100px;
+            height: 100px;
             object-fit: cover;
             border-radius: 4px;
         }
-        .favorite-name {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #1f2937;
-            margin: 0.5rem 0;
+        .favorite-details {
+            flex-grow: 1;
+            margin-left: 1rem;
         }
-        .favorite-description {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-            line-height: 1.2;
-        }
-        .favorite-price {
-            font-size: 0.875rem;
-            color: #4b5563;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+        .favorite-details p {
+            margin: 0.25rem 0;
         }
         .btn-remove {
-            width: 100%;
-            padding: 0.5rem;
             background-color: #ef4444;
             color: white;
+            border: none;
+            padding: 0.5rem 1rem;
             border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
+            cursor: pointer;
         }
         .btn-remove:hover {
             background-color: #dc2626;
@@ -136,23 +110,6 @@
         .nav-item i {
             font-size: 1.5rem;
         }
-        .badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        .error-message {
-            color: #ef4444;
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.875rem;
-        }
     </style>
 </head>
 <body>
@@ -160,14 +117,8 @@
         <h1>Избранное</h1>
     </header>
 
-    <div class="container mx-auto">
-        <div class="subheader">
-            <p id="favorites-count">Товаров: 0</p>
-        </div>
-
-        <div class="favorites-grid" id="favorite-items">
-            <!-- Товары будут добавлены через JavaScript -->
-        </div>
+    <div class="favorites-container" id="favorites-container">
+        <!-- Избранные товары будут добавлены через JavaScript -->
     </div>
 
     <nav class="navbar">
@@ -179,11 +130,9 @@
         </a>
         <a href="/favorites.html" class="nav-item active" id="favorites-nav">
             <i class="fas fa-heart"></i>
-            <span class="badge" id="favorites-count-nav">0</span>
         </a>
         <a href="/cart.html" class="nav-item" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
-            <span class="badge" id="cart-count">0</span>
         </a>
         <a href="/profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
@@ -199,82 +148,63 @@
         let favoriteItems = [];
         const userId = tg.initDataUnsafe.user?.id || 'default';
 
-        function loadFavorites() {
+        function loadLocalData() {
             try {
-                favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
-                console.log('Загруженные избранные товары:', favoriteItems);
-                const favoriteItemsContainer = document.getElementById('favorite-items');
-                favoriteItemsContainer.innerHTML = '';
-                const favoritesCount = document.getElementById('favorites-count');
-                const favoritesCountNav = document.getElementById('favorites-count-nav');
-                favoritesCount.textContent = `Товаров: ${favoriteItems.length}`;
-                favoritesCountNav.textContent = favoriteItems.length || 0;
-
-                if (favoriteItems.length === 0) {
-                    favoriteItemsContainer.innerHTML = '<p class="error-message">Избранное пусто</p>';
-                    return;
+                const storedFavorites = localStorage.getItem(`favorites_${userId}`);
+                favoriteItems = storedFavorites ? JSON.parse(storedFavorites) : [];
+                if (!Array.isArray(favoriteItems)) {
+                    console.error('Данные избранного повреждены, сбрасываем избранное');
+                    favoriteItems = [];
+                    localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
                 }
-
-                favoriteItems.forEach(item => {
-                    const favoriteItem = document.createElement('div');
-                    favoriteItem.className = 'favorite-item';
-                    favoriteItem.innerHTML = `
-                        <img src="${item.image_url?.split(',')[0] || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
-                        <p class="favorite-name">${item.name}</p>
-                        <p class="favorite-description">${item.description || 'Описание отсутствует'}</p>
-                        <p class="favorite-price">${item.price || 0} грн</p>
-                        <button class="btn-remove" onclick="removeFromFavorites(${item.id})">Удалить</button>
-                    `;
-                    favoriteItem.addEventListener('click', (e) => {
-                        if (!e.target.classList.contains('btn-remove')) {
-                            tg.showAlert(`Товар: ${item.name}\nЦена: ${item.price} грн\nОписание: ${item.description}`);
-                        }
-                    });
-                    favoriteItemsContainer.appendChild(favoriteItem);
-                });
+                displayFavorites();
             } catch (error) {
-                console.error('Ошибка загрузки избранного:', error);
-                document.getElementById('favorite-items').innerHTML = '<p class="error-message">Ошибка загрузки избранного</p>';
+                console.error('Ошибка загрузки данных из localStorage:', error);
+                favoriteItems = [];
+                localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
+                tg.showAlert('Ошибка загрузки избранного. Данные сброшены.');
             }
-        }
-
-        function removeFromFavorites(productId) {
-            favoriteItems = favoriteItems.filter(item => item.id !== productId);
-            saveLocalData();
-            loadFavorites();
-            tg.showAlert('Товар удалён из избранного!');
-        }
-
-        function updateCartCount() {
-            const cartItems = JSON.parse(localStorage.getItem(`cart_${userId}`)) || [];
-            document.getElementById('cart-count').textContent = cartItems.length || 0;
         }
 
         function saveLocalData() {
             try {
                 localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
             } catch (error) {
-                console.error('Ошибка сохранения избранного:', error);
+                console.error('Ошибка сохранения данных в localStorage:', error);
                 tg.showAlert('Ошибка сохранения избранного.');
             }
         }
 
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(event) {
-                event.preventDefault();
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                const href = this.getAttribute('href');
-                if (href && href !== '#') {
-                    window.location.href = href;
+        function displayFavorites() {
+            const container = document.getElementById('favorites-container');
+            container.innerHTML = '';
+            favoriteItems.forEach(item => {
+                if (item && item.id) {
+                    const favoriteItem = document.createElement('div');
+                    favoriteItem.className = 'favorite-item';
+                    favoriteItem.innerHTML = `
+                        <img src="${(item.image_url && item.image_url.split(',')[0]) || 'https://via.placeholder.com/100'}" alt="${item.name || 'Без названия'}">
+                        <div class="favorite-details">
+                            <p class="product-name">${item.name || 'Без названия'}</p>
+                            <p class="product-price">${item.price || 0} грн</p>
+                        </div>
+                        <button class="btn-remove" onclick="removeFavorite('${item.id}')">Удалить</button>
+                    `;
+                    container.appendChild(favoriteItem);
                 }
             });
-        });
+        }
+
+        function removeFavorite(productId) {
+            favoriteItems = favoriteItems.filter(item => item && item.id !== productId);
+            saveLocalData();
+            displayFavorites();
+            tg.showAlert('Удалено из избранного');
+        }
 
         window.onload = () => {
             console.log('Загрузка страницы favorites.html');
-            loadFavorites();
-            updateCartCount();
+            loadLocalData();
         };
     </script>
 </body>

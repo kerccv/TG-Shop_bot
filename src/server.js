@@ -68,14 +68,23 @@ app.get('/api/products', async (req, res) => {
 
 // Маршрут для сохранения заказа и отправки уведомления админу
 app.post('/api/orders', async (req, res) => {
-    console.log('Запрос на /api/orders');
+    console.log('Запрос на /api/orders, тело запроса:', req.body);
     try {
         const { userId, orderDetails, userInfo } = req.body;
+
+        if (!userId || !orderDetails || !userInfo) {
+            throw new Error('Отсутствуют обязательные поля: userId, orderDetails или userInfo');
+        }
 
         // Сохранение заказа в Supabase
         const { data, error } = await supabase
             .from('orders')
-            .insert({ user_id: userId, order_details: orderDetails, user_info: userInfo })
+            .insert({
+                user_id: userId,
+                order_details: orderDetails,
+                user_info: userInfo,
+                created_at: new Date().toISOString()
+            })
             .select();
         if (error) {
             console.error('Ошибка Supabase при сохранении заказа:', error);
@@ -85,14 +94,14 @@ app.post('/api/orders', async (req, res) => {
 
         // Формирование сообщения для админа
         const itemsText = orderDetails.map(item => 
-            `Товар: ${item.name}, Цена: ${item.price} грн, Кол-во: ${item.quantity}`
+            `Товар: ${item.name || 'Без названия'}, Цена: ${item.price || 0} грн, Кол-во: ${item.quantity || 1}`
         ).join('\n');
         const userText = `
 Информация о пользователе:
-ФИО: ${userInfo.fullName}
-Телефон: ${userInfo.phone}
-Тип оплаты: ${userInfo.paymentType}
-Адрес: Украина, ${userInfo.region}, ${userInfo.city}, ул. ${userInfo.street}, дом ${userInfo.house}, кв. ${userInfo.apartment}, этаж ${userInfo.floor}
+ФИО: ${userInfo.fullName || 'Не указано'}
+Телефон: ${userInfo.phone || 'Не указан'}
+Тип оплаты: ${userInfo.paymentType || 'Не указан'}
+Адрес: Украина, ${userInfo.region || 'Не указан'}, ${userInfo.city || 'Не указан'}, ул. ${userInfo.street || 'Не указана'}, дом ${userInfo.house || 'Не указан'}, кв. ${userInfo.apartment || 'Не указан'}, этаж ${userInfo.floor || 'Не указан'}
         `;
         const message = `Новый заказ:\n\n${itemsText}\n\n${userText}`;
 

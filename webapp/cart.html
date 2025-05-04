@@ -30,18 +30,7 @@
             font-weight: 700;
             margin: 0;
         }
-        .subheader {
-            text-align: center;
-            margin: 1rem 0;
-            padding: 0 1rem;
-        }
-        .subheader p {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        .cart-grid {
-            display: grid;
-            gap: 1rem;
+        .cart-container {
             padding: 1rem;
             max-width: 800px;
             margin: 0 auto;
@@ -50,139 +39,50 @@
             background-color: #ffffff;
             border-radius: 8px;
             padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease-in-out;
-            position: relative;
-            text-align: center;
         }
-        .cart-item:hover {
-            transform: translateY(-3px);
-        }
-        .cart-image {
-            width: 100%;
-            height: 150px;
+        .cart-item img {
+            width: 100px;
+            height: 100px;
             object-fit: cover;
             border-radius: 4px;
         }
-        .cart-name {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #1f2937;
-            margin: 0.5rem 0;
+        .cart-details {
+            flex-grow: 1;
+            margin-left: 1rem;
         }
-        .cart-description {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-            line-height: 1.2;
-        }
-        .cart-price {
-            font-size: 0.875rem;
-            color: #4b5563;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        .cart-quantity {
-            margin-bottom: 0.5rem;
-        }
-        .cart-quantity select {
-            padding: 0.25rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            font-size: 0.75rem;
+        .cart-details p {
+            margin: 0.25rem 0;
         }
         .btn-remove {
-            width: 100%;
-            padding: 0.5rem;
             background-color: #ef4444;
             color: white;
+            border: none;
+            padding: 0.5rem 1rem;
             border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
+            cursor: pointer;
         }
         .btn-remove:hover {
             background-color: #dc2626;
         }
-        .total {
-            text-align: center;
-            margin: 1rem;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #1f2937;
+        .btn-order {
+           background-color: #3b82f6;
+           color: white;
+           border: none;
+           padding: 0.75rem 1.5rem;
+           border-radius: 4px;
+           cursor: pointer;
+           width: 100%; /* Или укажите нужную ширину, например, 50% или 200px */
+           max-width: 300px; /* Ограничение максимальной ширины */
+           margin: 1rem auto; /* Центрирование кнопки */
+           display: block; /* Для корректного центрирования */
         }
-        .btn-checkout {
-            width: 200px;
-            padding: 0.75rem;
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
-            display: block;
-            margin: 1rem auto;
-        }
-        .btn-checkout:hover {
-            background-color: #2563eb;
-        }
-        .checkout-form {
-            display: none;
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 1.5rem;
-            max-width: 90%;
-            max-height: 90%;
-            overflow-y: auto;
-            margin: 1rem auto;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            color: #1f2937;
-            margin-bottom: 0.25rem;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
-        .autocomplete-suggestions {
-            position: absolute;
-            background-color: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            max-height: 150px;
-            overflow-y: auto;
-            z-index: 1000;
-            width: calc(100% - 2rem);
-        }
-        .autocomplete-suggestion {
-            padding: 0.5rem;
-            cursor: pointer;
-        }
-        .autocomplete-suggestion:hover {
-            background-color: #f3f4f6;
-        }
-        .btn-submit-order {
-            width: 100%;
-            padding: 0.75rem;
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
-            margin-top: 1rem;
-        }
-        .btn-submit-order:hover {
-            background-color: #2563eb;
+        .btn-order:hover {
+           background-color: #2563eb;
         }
         .navbar {
             position: fixed;
@@ -225,23 +125,6 @@
         .nav-item i {
             font-size: 1.5rem;
         }
-        .badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        .error-message {
-            color: #ef4444;
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.875rem;
-        }
     </style>
 </head>
 <body>
@@ -249,71 +132,10 @@
         <h1>Корзина</h1>
     </header>
 
-    <div class="container mx-auto">
-        <div class="subheader">
-            <p id="cart-count">Товаров: 0</p>
-        </div>
-
-        <div class="cart-grid" id="cart-items">
-            <!-- Товары будут добавлены через JavaScript -->
-        </div>
-        <div class="total" id="total-price">Итого: 0 грн</div>
-        <button class="btn-checkout" onclick="showCheckoutForm()">Оформить заказ</button>
-
-        <div id="checkout-form" class="checkout-form">
-            <div class="form-group">
-                <label for="payment-type">Тип оплаты</label>
-                <select id="payment-type">
-                    <option value="cash">Наличка</option>
-                    <option value="card">Карта</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="full-name">ФИО</label>
-                <input type="text" id="full-name" placeholder="Имя Фамилия Отчество">
-            </div>
-            <div class="form-group">
-                <label for="phone">Номер телефона</label>
-                <input type="tel" id="phone" placeholder="+380123456789">
-            </div>
-            <div class="form-group">
-                <label for="country">Страна</label>
-                <input type="text" id="country" value="Украина" readonly>
-            </div>
-            <div class="form-group">
-                <label for="region">Область</label>
-                <input type="text" id="region" placeholder="Область" onkeyup="fetchAddressSuggestions('region')">
-                <div id="region-suggestions" class="autocomplete-suggestions"></div>
-            </div>
-            <div class="form-group">
-                <label for="city">Город/Посёлок</label>
-                <input type="text" id="city" placeholder="Город/Посёлок" onkeyup="fetchAddressSuggestions('city')">
-                <div id="city-suggestions" class="autocomplete-suggestions"></div>
-            </div>
-            <div class="form-group">
-                <label for="street">Улица</label>
-                <input type="text" id="street" placeholder="Название улицы" onkeyup="fetchAddressSuggestions('street')">
-                <div id="street-suggestions" class="autocomplete-suggestions"></div>
-            </div>
-            <div class="form-group">
-                <label for="house">Дом</label>
-                <input type="text" id="house" placeholder="Номер дома">
-            </div>
-            <div class="form-group">
-                <label for="apartment">Квартира</label>
-                <input type="text" id="apartment" placeholder="Номер квартиры">
-            </div>
-            <div class="form-group">
-                <label for="floor">Этаж</label>
-                <input type="text" id="floor" placeholder="Этаж">
-            </div>
-            <div class="form-group">
-                <label>Товары в заказе:</label>
-                <div id="order-items"></div>
-            </div>
-            <button class="btn-submit-order" onclick="submitOrder()">Подтвердить заказ</button>
-        </div>
+    <div class="cart-container" id="cart-container">
+        <!-- Товары корзины будут добавлены через JavaScript -->
     </div>
+    <button class="btn-order" onclick="placeOrder()">Оформить заказ</button>
 
     <nav class="navbar">
         <a href="/" class="nav-item" id="home-nav">
@@ -324,11 +146,9 @@
         </a>
         <a href="/favorites.html" class="nav-item" id="favorites-nav">
             <i class="fas fa-heart"></i>
-            <span class="badge" id="favorites-count">0</span>
         </a>
         <a href="/cart.html" class="nav-item active" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
-            <span class="badge" id="cart-count-nav">0</span>
         </a>
         <a href="/profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
@@ -344,141 +164,77 @@
         let cartItems = [];
         const userId = tg.initDataUnsafe.user?.id || 'default';
 
-        function loadCart() {
+        function loadLocalData() {
             try {
                 const storedCart = localStorage.getItem(`cart_${userId}`);
                 cartItems = storedCart ? JSON.parse(storedCart) : [];
-                console.log('Загруженные товары в корзине:', cartItems);
-
-                const cartItemsContainer = document.getElementById('cart-items');
-                cartItemsContainer.innerHTML = '';
-                const cartCount = document.getElementById('cart-count');
-                const cartCountNav = document.getElementById('cart-count-nav');
-                cartCount.textContent = `Товаров: ${cartItems.length}`;
-                cartCountNav.textContent = cartItems.length || 0;
-
-                const totalPrice = cartItems.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
-                document.getElementById('total-price').textContent = `Итого: ${totalPrice} грн`;
-
-                if (cartItems.length === 0) {
-                    cartItemsContainer.innerHTML = '<p class="error-message">Корзина пуста</p>';
-                    return;
+                if (!Array.isArray(cartItems)) {
+                    console.error('Данные корзины повреждены, сбрасываем корзину');
+                    cartItems = [];
+                    localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
                 }
+                displayCart();
+            } catch (error) {
+                console.error('Ошибка загрузки данных из localStorage:', error);
+                cartItems = [];
+                localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
+                tg.showAlert('Ошибка загрузки корзины. Данные сброшены.');
+            }
+        }
 
-                cartItems.forEach(item => {
+        function saveLocalData() {
+            try {
+                localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
+            } catch (error) {
+                console.error('Ошибка сохранения данных в localStorage:', error);
+                tg.showAlert('Ошибка сохранения корзины.');
+            }
+        }
+
+        function displayCart() {
+            const container = document.getElementById('cart-container');
+            container.innerHTML = '';
+            cartItems.forEach(item => {
+                if (item && item.id) {
                     const cartItem = document.createElement('div');
                     cartItem.className = 'cart-item';
                     cartItem.innerHTML = `
-                        <img src="${item.image_url?.split(',')[0] || 'https://via.placeholder.com/150'}" alt="${item.name}" class="cart-image">
-                        <p class="cart-name">${item.name}</p>
-                        <p class="cart-description">${item.description || 'Описание отсутствует'}</p>
-                        <p class="cart-price">${item.price || 0} грн</p>
-                        <div class="cart-quantity">
-                            <label for="quantity-${item.id}">Количество:</label>
-                            <select id="quantity-${item.id}" onchange="updateCartQuantity(${item.id}, this.value)">
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                            </select>
+                        <img src="${(item.image_url && item.image_url.split(',')[0]) || 'https://via.placeholder.com/100'}" alt="${item.name || 'Без названия'}">
+                        <div class="cart-details">
+                            <p class="product-name">${item.name || 'Без названия'}</p>
+                            <p class="product-price">${item.price || 0} грн x ${item.quantity || 1} = ${(item.price || 0) * (item.quantity || 1)} грн</p>
                         </div>
-                        <button class="btn-remove" onclick="removeFromCart(${item.id})">Удалить</button>
+                        <button class="btn-remove" onclick="removeFromCart('${item.id}')">Удалить</button>
                     `;
-                    const quantitySelect = cartItem.querySelector(`#quantity-${item.id}`);
-                    quantitySelect.value = item.quantity || 1;
-                    cartItemsContainer.appendChild(cartItem);
-                });
-            } catch (error) {
-                console.error('Ошибка загрузки корзины:', error);
-                document.getElementById('cart-items').innerHTML = '<p class="error-message">Ошибка загрузки корзины</p>';
-            }
-        }
-
-        function updateCartQuantity(productId, quantity) {
-            const item = cartItems.find(item => item.id === productId);
-            if (item) {
-                item.quantity = parseInt(quantity);
-                saveLocalData();
-                loadCart();
-                tg.showAlert('Количество обновлено!');
-            }
+                    container.appendChild(cartItem);
+                }
+            });
         }
 
         function removeFromCart(productId) {
-            cartItems = cartItems.filter(item => item.id !== productId);
+            cartItems = cartItems.filter(item => item && item.id !== productId);
             saveLocalData();
-            loadCart();
-            tg.showAlert('Товар удалён из корзины!');
+            displayCart();
+            tg.showAlert('Удалено из корзины');
         }
 
-        function updateFavoritesCount() {
-            const favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
-            document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
-        }
-
-        function showCheckoutForm() {
+        async function placeOrder() {
             if (cartItems.length === 0) {
                 tg.showAlert('Корзина пуста!');
                 return;
             }
-            const checkoutForm = document.getElementById('checkout-form');
-            const orderItems = document.getElementById('order-items');
-            orderItems.innerHTML = cartItems.map(item => 
-                `<p>${item.name} - ${item.price} грн x ${item.quantity}</p>`
-            ).join('');
-            checkoutForm.style.display = 'block';
-        }
 
-        async function fetchAddressSuggestions(field) {
-            const input = document.getElementById(field).value;
-            if (input.length < 3) return;
-
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}, Ukraine&addressdetails=1`);
-                const data = await response.json();
-                const suggestionsDiv = document.getElementById(`${field}-suggestions`);
-                suggestionsDiv.innerHTML = '';
-
-                const suggestions = data.map(item => {
-                    if (field === 'region') return item.address.state;
-                    if (field === 'city') return item.address.city || item.address.town || item.address.village;
-                    if (field === 'street') return item.address.road;
-                }).filter((value, index, self) => value && self.indexOf(value) === index);
-
-                suggestions.forEach(suggestion => {
-                    const div = document.createElement('div');
-                    div.className = 'autocomplete-suggestion';
-                    div.textContent = suggestion;
-                    div.onclick = () => {
-                        document.getElementById(field).value = suggestion;
-                        suggestionsDiv.innerHTML = '';
-                    };
-                    suggestionsDiv.appendChild(div);
-                });
-            } catch (error) {
-                console.error('Ошибка автодополнения адреса:', error);
-            }
-        }
-
-        async function submitOrder() {
             const userInfo = {
-                paymentType: document.getElementById('payment-type').value,
-                fullName: document.getElementById('full-name').value,
-                phone: document.getElementById('phone').value,
-                country: document.getElementById('country').value,
-                region: document.getElementById('region').value,
-                city: document.getElementById('city').value,
-                street: document.getElementById('street').value,
-                house: document.getElementById('house').value,
-                apartment: document.getElementById('apartment').value,
-                floor: document.getElementById('floor').value
+                fullName: prompt('Введите ФИО:') || 'Не указано',
+                phone: prompt('Введите телефон:') || 'Не указан',
+                paymentType: prompt('Введите тип оплаты:') || 'Не указан',
+                region: prompt('Введите область:') || 'Не указана',
+                city: prompt('Введите город:') || 'Не указан',
+                street: prompt('Введите улицу:') || 'Не указана',
+                house: prompt('Введите номер дома:') || 'Не указан',
+                apartment: prompt('Введите номер квартиры:') || 'Не указан',
+                floor: prompt('Введите этаж:') || 'Не указан'
             };
-
-            if (!userInfo.fullName || !userInfo.phone || !userInfo.region || !userInfo.city || !userInfo.street || !userInfo.house) {
-                tg.showAlert('Пожалуйста, заполните все обязательные поля!');
-                return;
-            }
 
             try {
                 const response = await fetch('/api/orders', {
@@ -491,47 +247,26 @@
                     })
                 });
 
-                if (response.ok) {
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                const result = await response.json();
+                if (result.success) {
                     cartItems = [];
                     saveLocalData();
-                    loadCart();
-                    document.getElementById('checkout-form').style.display = 'none';
+                    displayCart();
                     tg.showAlert('Заказ успешно оформлен!');
-                } else {
-                    const errorText = await response.text();
-                    tg.showAlert(`Ошибка при оформлении заказа: ${errorText}`);
                 }
             } catch (error) {
                 console.error('Ошибка при оформлении заказа:', error);
-                tg.showAlert('Ошибка при оформлении заказа');
+                tg.showAlert('Ошибка при оформлении заказа: ' + error.message);
             }
         }
-
-        function saveLocalData() {
-            try {
-                localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
-            } catch (error) {
-                console.error('Ошибка сохранения корзины:', error);
-                tg.showAlert('Ошибка сохранения корзины.');
-            }
-        }
-
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(event) {
-                event.preventDefault();
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                const href = this.getAttribute('href');
-                if (href && href !== '#') {
-                    window.location.href = href;
-                }
-            });
-        });
 
         window.onload = () => {
             console.log('Загрузка страницы cart.html');
-            loadCart();
-            updateFavoritesCount();
+            loadLocalData();
         };
     </script>
 </body>
