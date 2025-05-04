@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f9fafb;
+            background-color: #f5f7fa;
             margin: 0;
             padding: 0;
             padding-bottom: 70px;
@@ -33,6 +33,8 @@
         .profile-container {
             padding: 1rem;
             text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
         }
         .avatar {
             width: 120px;
@@ -52,22 +54,19 @@
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             font-size: 0.875rem;
+            margin: 0 auto;
         }
         .btn-save {
-            width: 100%;
-            max-width: 250px;
+            width: 200px;
             padding: 0.75rem;
             background-color: #3b82f6;
             color: white;
-            border-radius: 6px;
+            border-radius: 4px;
             font-size: 0.875rem;
             font-weight: 500;
             transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.25rem;
-            margin-top: 1rem;
+            display: block;
+            margin: 0 auto;
         }
         .btn-save:hover {
             background-color: #2563eb;
@@ -123,6 +122,12 @@
             padding: 2px 6px;
             font-size: 0.75rem;
             font-weight: 500;
+        }
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -215,6 +220,8 @@
                 if (response.ok) {
                     cartItems = await response.json();
                     document.getElementById('cart-count').textContent = cartItems.length || 0;
+                } else {
+                    console.error('Ошибка обновления корзины:', await response.text());
                 }
             } catch (error) {
                 console.error('Ошибка обновления корзины:', error);
@@ -227,6 +234,8 @@
                 if (response.ok) {
                     favoriteItems = await response.json();
                     document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
+                } else {
+                    console.error('Ошибка обновления избранного:', await response.text());
                 }
             } catch (error) {
                 console.error('Ошибка обновления избранного:', error);
@@ -240,7 +249,12 @@
                 this.classList.add('active');
                 const href = this.getAttribute('href');
                 if (href && href !== '#') {
-                    window.location.href = href;
+                    try {
+                        window.location.href = href;
+                    } catch (error) {
+                        console.error('Ошибка перехода:', error);
+                        document.getElementById('profile-container').innerHTML = `<p class="error-message">Нельзя открыть страницу: ${href}</p>`;
+                    }
                 }
             });
         });

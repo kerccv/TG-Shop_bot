@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f9fafb;
+            background-color: #f5f7fa;
             margin: 0;
             padding: 0;
             padding-bottom: 70px;
@@ -33,6 +33,7 @@
         .subheader {
             text-align: center;
             margin: 1rem 0;
+            padding: 0 1rem;
         }
         .subheader p {
             font-size: 0.875rem;
@@ -42,13 +43,17 @@
             display: grid;
             gap: 1rem;
             padding: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
         }
         .cart-item {
             background-color: #ffffff;
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 1rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: transform 0.2s ease-in-out;
+            position: relative;
+            text-align: center;
         }
         .cart-item:hover {
             transform: translateY(-3px);
@@ -57,45 +62,42 @@
             width: 100%;
             height: 100px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 4px;
         }
         .cart-name {
-            font-size: 0.875rem;
+            font-size: 1rem;
             font-weight: 500;
             color: #1f2937;
-            margin-top: 0.5rem;
-            text-align: center;
+            margin: 0.5rem 0;
         }
         .cart-description {
             font-size: 0.75rem;
             color: #6b7280;
-            text-align: center;
-            margin: 0.25rem 0;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
         }
         .cart-price {
             font-size: 0.875rem;
             color: #4b5563;
-            text-align: center;
+            font-weight: 600;
         }
-        .cart-tags {
-            font-size: 0.625rem;
-            color: #9ca3af;
-            text-align: center;
-            margin-top: 0.25rem;
+        .cart-quantity {
+            margin: 0.5rem 0;
+        }
+        .cart-quantity select {
+            padding: 0.25rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.875rem;
         }
         .btn-remove {
             width: 100%;
             padding: 0.5rem;
             background-color: #ef4444;
             color: white;
-            border-radius: 6px;
+            border-radius: 4px;
             font-size: 0.875rem;
-            font-weight: 500;
             transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.25rem;
             margin-top: 0.5rem;
         }
         .btn-remove:hover {
@@ -160,6 +162,12 @@
             font-size: 0.75rem;
             font-weight: 500;
         }
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body>
@@ -175,7 +183,7 @@
         <div class="cart-grid" id="cart-items">
             <!-- Товары будут добавлены через JavaScript -->
         </div>
-        <div class="total" id="total-price">Итого: 0 грн.</div>
+        <div class="total" id="total-price">Итого: 0 грн</div>
     </div>
 
     <nav class="navbar">
@@ -209,7 +217,9 @@
         async function loadCart() {
             try {
                 const response = await fetch(`/api/cart/${tg.initDataUnsafe.user?.id || 'default'}`);
-                if (!response.ok) throw new Error('Ошибка загрузки корзины');
+                if (!response.ok) {
+                    throw new Error(`Ошибка загрузки корзины: ${response.statusText}`);
+                }
                 cartItems = await response.json();
                 const cartItemsContainer = document.getElementById('cart-items');
                 cartItemsContainer.innerHTML = '';
@@ -218,34 +228,63 @@
                 cartCount.textContent = `Товаров: ${cartItems.length}`;
                 cartCountNav.textContent = cartItems.length || 0;
 
-                const totalPrice = cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
-                document.getElementById('total-price').textContent = `Итого: ${totalPrice} грн.`;
+                const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+                document.getElementById('total-price').textContent = `Итого: ${totalPrice} грн`;
 
                 cartItems.forEach(item => {
                     const cartItem = document.createElement('div');
                     cartItem.className = 'cart-item';
                     cartItem.innerHTML = `
-                        <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}" class="cart-image">
+                        <img src="${(item.image_url && item.image_url.split(',')[0]) || 'https://via.placeholder.com/100'}" alt="${item.name}" class="cart-image" onerror="this.src='https://via.placeholder.com/100'">
                         <p class="cart-name">${item.name}</p>
                         <p class="cart-description">${item.description || 'Описание отсутствует'}</p>
-                        <p class="cart-price">${item.price || 0} грн.</p>
-                        <p class="cart-tags">${item.tags ? item.tags.join(', ') : ''}</p>
-                        <button class="btn-remove">
+                        <p class="cart-price">${item.price} грн</p>
+                        <div class="cart-quantity">
+                            <label for="quantity-${item.id}">Кол-во:</label>
+                            <select id="quantity-${item.id}" onchange="updateCartQuantity(${item.id}, this.value)">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                        <button class="btn-remove" onclick="removeFromCart(${item.id})">
                             <i class="fas fa-trash"></i> Удалить
                         </button>
                     `;
-                    cartItem.querySelector('.btn-remove').addEventListener('click', () => removeFromCart(item.id));
+                    document.getElementById(`quantity-${item.id}`).value = item.quantity || 1;
                     cartItemsContainer.appendChild(cartItem);
                 });
             } catch (error) {
                 console.error('Ошибка загрузки корзины:', error);
-                document.getElementById('cart-items').innerHTML = '<p class="text-center text-red-500 text-sm">Не удалось загрузить корзину</p>';
+                document.getElementById('cart-items').innerHTML = `<p class="error-message">Не удалось загрузить корзину: ${error.message}</p>`;
+            }
+        }
+
+        async function updateCartQuantity(productId, quantity) {
+            try {
+                const response = await fetch('/api/cart/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user?.id || 'default', quantity })
+                });
+                if (response.ok) {
+                    cartItems = await response.json();
+                    loadCart();
+                    tg.showAlert('Количество обновлено!');
+                } else {
+                    throw new Error(`Ошибка обновления количества: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка обновления количества:', error);
+                tg.showAlert('Ошибка обновления количества');
             }
         }
 
         async function removeFromCart(productId) {
             try {
-                const response = await fetch(`/api/cart/remove`, {
+                const response = await fetch('/api/cart/remove', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user?.id || 'default' })
@@ -255,8 +294,7 @@
                     loadCart();
                     tg.showAlert('Товар удален из корзины!');
                 } else {
-                    const errorText = await response.text();
-                    tg.showAlert(`Ошибка при удалении: ${errorText}`);
+                    throw new Error(`Ошибка удаления: ${response.statusText}`);
                 }
             } catch (error) {
                 console.error('Ошибка удаления из корзины:', error);
@@ -270,9 +308,12 @@
                 if (response.ok) {
                     const favoriteItems = await response.json();
                     document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
+                } else {
+                    throw new Error(`Ошибка обновления избранного: ${response.statusText}`);
                 }
             } catch (error) {
                 console.error('Ошибка обновления избранного:', error);
+                document.getElementById('favorites-count').textContent = '0';
             }
         }
 
@@ -283,7 +324,11 @@
                 this.classList.add('active');
                 const href = this.getAttribute('href');
                 if (href && href !== '#') {
-                    window.location.href = href;
+                    try {
+                        window.location.href = href;
+                    } catch (error) {
+                        console.error('Ошибка перехода:', error);
+                    }
                 }
             });
         });

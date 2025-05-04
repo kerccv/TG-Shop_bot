@@ -47,18 +47,24 @@
         .settings {
             display: flex;
             justify-content: space-between;
-            padding: 1rem;
+            padding: 0.5rem;
             background-color: #ffffff;
             border-bottom: 1px solid #e5e7eb;
             position: sticky;
             top: 60px;
             z-index: 40;
+            align-items: center;
         }
         .settings select {
-            padding: 0.5rem;
+            padding: 0.25rem;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+        .settings i {
+            margin-right: 0.25rem;
+            color: #6b7280;
         }
         .product-grid {
             display: grid;
@@ -114,6 +120,115 @@
         }
         .favorite-icon.active {
             color: #ef4444;
+        }
+        .btn-cart-card {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            margin-top: 0.5rem;
+        }
+        .btn-cart-card:hover {
+            background-color: #2563eb;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s ease-in-out;
+            text-align: center;
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .modal-image.active {
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+        }
+        .modal-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 1rem 0;
+        }
+        .modal-description {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        .modal-price {
+            font-size: 1rem;
+            color: #4b5563;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .modal-quantity {
+            margin-bottom: 1rem;
+        }
+        .modal-quantity select {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        .modal-actions button {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin: 0.25rem 0;
+            transition: background-color 0.2s;
+        }
+        .btn-favorite-modal {
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+        .btn-favorite-modal:hover {
+            background-color: #d1d5db;
+        }
+        .btn-cart-modal {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-cart-modal:hover {
+            background-color: #2563eb;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
         }
         .pagination {
             display: flex;
@@ -190,6 +305,37 @@
             padding: 1rem;
             font-size: 0.875rem;
         }
+        .search-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 1000;
+            padding: 2rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .search-modal.active {
+            display: block;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .search-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -205,16 +351,16 @@
 
         <div class="settings">
             <div>
-                <label for="items-per-page">Товаров на странице:</label>
+                <i class="fas fa-list"></i>
                 <select id="items-per-page" onchange="updateItemsPerPage()">
-                    <option value="4">4</option>
-                    <option value="6">6</option>
-                    <option value="8" selected>8</option>
                     <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                    <option value="25" selected>25</option>
                 </select>
             </div>
             <div>
-                <label for="sort-by">Сортировка:</label>
+                <i class="fas fa-sort"></i>
                 <select id="sort-by" onchange="sortProducts()">
                     <option value="price-asc">Цена (по возрастанию)</option>
                     <option value="price-desc">Цена (по убыванию)</option>
@@ -231,6 +377,11 @@
         <div class="pagination" id="pagination">
             <!-- Пагинация будет добавлена через JavaScript -->
         </div>
+    </div>
+
+    <div id="search-modal" class="search-modal">
+        <span class="search-close" onclick="closeSearchModal()">×</span>
+        <input type="text" id="search-input" class="search-input" placeholder="Поиск по названию или тегам..." onkeyup="searchProducts()">
     </div>
 
     <nav class="navbar">
@@ -263,7 +414,7 @@
         let favoriteItems = [];
         let allProducts = [];
         let currentPage = 1;
-        let itemsPerPage = 8;
+        let itemsPerPage = 25;
 
         async function loadProducts() {
             try {
@@ -313,15 +464,16 @@
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card';
                 productCard.innerHTML = `
-                    <img src="${product.image_url || 'https://via.placeholder.com/150'}" alt="${product.name}" class="product-image" onerror="this.src='https://via.placeholder.com/150'">
+                    <img src="${(product.image_url && product.image_url.split(',')[0]) || 'https://via.placeholder.com/150'}" alt="${product.name}" class="product-image">
                     <i class="fas fa-heart favorite-icon ${isFavorite ? 'active' : ''}" onclick="toggleFavorite(${product.id}, this)"></i>
                     <p class="product-name">${product.name}</p>
                     <p class="product-description">${product.description || 'Описание отсутствует'}</p>
-                    <p class="product-price">${product.price} грн.</p>
+                    <p class="product-price">${product.price} грн</p>
+                    <button class="btn-cart-card" onclick="addToCartModal(${product.id}, event)">В корзину</button>
                 `;
                 productCard.addEventListener('click', (e) => {
-                    if (!e.target.classList.contains('favorite-icon')) {
-                        tg.showAlert(`Товар: ${product.name}\nЦена: ${product.price} грн.\nОписание: ${product.description}`);
+                    if (!e.target.classList.contains('favorite-icon') && !e.target.classList.contains('btn-cart-card')) {
+                        openModal(product);
                     }
                 });
                 productsContainer.appendChild(productCard);
@@ -372,12 +524,12 @@
             }
         }
 
-        async function addToCart(productId) {
+        async function addToCart(productId, quantity) {
             try {
                 const response = await fetch('/api/cart/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user?.id || 'default' })
+                    body: JSON.stringify({ productId, quantity, userId: tg.initDataUnsafe.user?.id || 'default' })
                 });
                 if (response.ok) {
                     cartItems = await response.json();
@@ -391,6 +543,12 @@
                 console.error('Ошибка добавления в корзину:', error);
                 tg.showAlert('Ошибка при добавлении в корзину');
             }
+        }
+
+        async function addToCartModal(productId, event) {
+            event.stopPropagation();
+            const quantity = 1; // По умолчанию 1, будет изменено в модальном окне
+            await addToCart(productId, quantity);
         }
 
         async function updateCartCount() {
@@ -421,6 +579,56 @@
             }
         }
 
+        function openModal(product) {
+            const modal = document.getElementById('modal');
+            const modalImage = document.getElementById('modal-image');
+            const imageUrls = product.image_url ? product.image_url.split(',') : ['https://via.placeholder.com/150'];
+            let currentImageIndex = 0;
+
+            modalImage.src = imageUrls[0];
+            document.getElementById('modal-name').textContent = product.name;
+            document.getElementById('modal-description').textContent = product.description || 'Описание отсутствует';
+            document.getElementById('modal-price').textContent = `${product.price} грн`;
+            document.getElementById('modal-quantity').value = 1;
+
+            modalImage.onclick = () => {
+                currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
+                modalImage.src = imageUrls[currentImageIndex];
+                if (imageUrls.length > 1) {
+                    modalImage.classList.add('active');
+                }
+            };
+
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+            document.getElementById('modal-image').classList.remove('active');
+        }
+
+        function openSearchModal() {
+            document.getElementById('search-modal').classList.add('active');
+            document.getElementById('search-input').focus();
+        }
+
+        function closeSearchModal() {
+            document.getElementById('search-modal').classList.remove('active');
+        }
+
+        function searchProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filteredProducts = allProducts.filter(product =>
+                product.name.toLowerCase().includes(query) || (product.tags && product.tags.some(tag => tag.toLowerCase().includes(query)))
+            );
+            allProducts = filteredProducts;
+            currentPage = 1;
+            displayProducts();
+        }
+
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function(event) {
                 event.preventDefault();
@@ -436,6 +644,8 @@
                     }
                 } else if (this.id === 'home-nav') {
                     loadProducts();
+                } else if (this.id === 'search-nav') {
+                    openSearchModal();
                 }
             });
         });
@@ -446,5 +656,29 @@
             updateFavoritesCount();
         };
     </script>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">×</span>
+            <img id="modal-image" class="modal-image" src="" alt="Товар">
+            <p id="modal-name" class="modal-name"></p>
+            <p id="modal-description" class="modal-description"></p>
+            <p id="modal-price" class="modal-price"></p>
+            <div class="modal-quantity">
+                <label for="modal-quantity-select">Количество:</label>
+                <select id="modal-quantity-select">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-favorite-modal" onclick="toggleFavorite(event.target.dataset.id, event.target)">В избранное</button>
+                <button class="btn-cart-modal" onclick="addToCart(event.target.dataset.id, document.getElementById('modal-quantity-select').value)">В корзину</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

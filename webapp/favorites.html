@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f9fafb;
+            background-color: #f5f7fa;
             margin: 0;
             padding: 0;
             padding-bottom: 70px;
@@ -33,6 +33,7 @@
         .subheader {
             text-align: center;
             margin: 1rem 0;
+            padding: 0 1rem;
         }
         .subheader p {
             font-size: 0.875rem;
@@ -42,61 +43,54 @@
             display: grid;
             gap: 1rem;
             padding: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
         }
         .favorite-item {
             background-color: #ffffff;
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 1rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: transform 0.2s ease-in-out;
+            position: relative;
+            text-align: center;
         }
         .favorite-item:hover {
             transform: translateY(-3px);
         }
         .favorite-image {
             width: 100%;
-            height: 100px;
+            height: 150px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 4px;
         }
         .favorite-name {
-            font-size: 0.875rem;
+            font-size: 1rem;
             font-weight: 500;
             color: #1f2937;
-            margin-top: 0.5rem;
-            text-align: center;
+            margin: 0.5rem 0;
         }
         .favorite-description {
             font-size: 0.75rem;
             color: #6b7280;
-            text-align: center;
-            margin: 0.25rem 0;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
         }
         .favorite-price {
             font-size: 0.875rem;
             color: #4b5563;
-            text-align: center;
-        }
-        .favorite-tags {
-            font-size: 0.625rem;
-            color: #9ca3af;
-            text-align: center;
-            margin-top: 0.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
         }
         .btn-remove {
             width: 100%;
             padding: 0.5rem;
             background-color: #ef4444;
             color: white;
-            border-radius: 6px;
-            font-size: 0.875rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
             font-weight: 500;
             transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.25rem;
-            margin-top: 0.5rem;
         }
         .btn-remove:hover {
             background-color: #dc2626;
@@ -153,6 +147,12 @@
             font-size: 0.75rem;
             font-weight: 500;
         }
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body>
@@ -201,7 +201,9 @@
         async function loadFavorites() {
             try {
                 const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user?.id || 'default'}`);
-                if (!response.ok) throw new Error('Ошибка загрузки избранного');
+                if (!response.ok) {
+                    throw new Error(`Ошибка загрузки избранного: ${response.status} ${response.statusText}`);
+                }
                 favoriteItems = await response.json();
                 const favoriteItemsContainer = document.getElementById('favorite-items');
                 favoriteItemsContainer.innerHTML = '';
@@ -214,27 +216,26 @@
                     const favoriteItem = document.createElement('div');
                     favoriteItem.className = 'favorite-item';
                     favoriteItem.innerHTML = `
-                        <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
+                        <img src="${item.image_url || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
                         <p class="favorite-name">${item.name}</p>
                         <p class="favorite-description">${item.description || 'Описание отсутствует'}</p>
-                        <p class="favorite-price">${item.price || 0} грн.</p>
-                        <p class="favorite-tags">${item.tags ? item.tags.join(', ') : ''}</p>
-                        <button class="btn-remove">
-                            <i class="fas fa-trash"></i> Удалить
-                        </button>
+                        <p class="favorite-price">${item.price || 0} грн</p>
+                        <button class="btn-remove" onclick="removeFromFavorites(${item.id})">Удалить</button>
                     `;
-                    favoriteItem.querySelector('.btn-remove').addEventListener('click', () => removeFromFavorites(item.id));
+                    favoriteItem.addEventListener('click', () => {
+                        tg.showAlert(`Товар: ${item.name}\nЦена: ${item.price} грн\nОписание: ${item.description}`);
+                    });
                     favoriteItemsContainer.appendChild(favoriteItem);
                 });
             } catch (error) {
                 console.error('Ошибка загрузки избранного:', error);
-                document.getElementById('favorite-items').innerHTML = '<p class="text-center text-red-500 text-sm">Не удалось загрузить избранное</p>';
+                document.getElementById('favorite-items').innerHTML = `<p class="error-message">Не удалось загрузить избранное: ${error.message}</p>`;
             }
         }
 
         async function removeFromFavorites(productId) {
             try {
-                const response = await fetch(`/api/favorites/remove`, {
+                const response = await fetch('/api/favorites/remove', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user?.id || 'default' })
@@ -259,6 +260,8 @@
                 if (response.ok) {
                     const cartItems = await response.json();
                     document.getElementById('cart-count').textContent = cartItems.length || 0;
+                } else {
+                    console.error('Ошибка обновления корзины:', await response.text());
                 }
             } catch (error) {
                 console.error('Ошибка обновления корзины:', error);
@@ -272,7 +275,12 @@
                 this.classList.add('active');
                 const href = this.getAttribute('href');
                 if (href && href !== '#') {
-                    window.location.href = href;
+                    try {
+                        window.location.href = href;
+                    } catch (error) {
+                        console.error('Ошибка перехода:', error);
+                        document.getElementById('favorite-items').innerHTML = `<p class="error-message">Нельзя открыть страницу: ${href}</p>`;
+                    }
                 }
             });
         });
