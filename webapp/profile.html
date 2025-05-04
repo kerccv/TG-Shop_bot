@@ -1,175 +1,53 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль - Магазин Lavander</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Mono:ital,wght@0,200..700;1,200..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="/public/styles.css">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 70px;
-            overflow-x: hidden;
-        }
-        .header {
-            color: rgb(0, 0, 0);
-            padding: 1rem;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: rgba(255, 255, 255, 0.22);
-            border-radius: 16px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(6.8px);
-            -webkit-backdrop-filter: blur(6.8px);
-            font-family: "Cascadia Mono", sans-serif;
-        }
-        .header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        .profile-container {
-            padding: 1rem;
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 auto 1rem;
-            border: 2px solid #e5e7eb;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group input {
-            width: 100%;
-            max-width: 250px;
-            padding: 0.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            margin: 0 auto;
-        }
-        .btn-save {
-            width: 200px;
-            padding: 0.75rem;
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
-            display: block;
-            margin: 0 auto;
-        }
-        .btn-save:hover {
-            background-color: #2563eb;
-        }
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: #ffffff;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 60px;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
-            z-index: 1000;
-        }
-        .nav-item {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6b7280;
-            padding: 0.5rem;
-            transition: color 0.3s ease;
-        }
-        .nav-item.active {
-            color: #1f2937;
-        }
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            background-color: #f3f4f6;
-            border-radius: 50%;
-            z-index: -1;
-        }
-        .nav-item i {
-            font-size: 1.5rem;
-        }
-        .badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        .error-message {
-            color: #ef4444;
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.875rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <header class="header">
         <h1>Профиль</h1>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <i class="fas fa-adjust"></i>
+        </button>
     </header>
 
-    <div class="profile-container">
-        <img src="https://via.placeholder.com/120" alt="Аватар" class="avatar" id="avatar-preview">
-        <div class="form-group">
-            <input type="file" id="avatar-upload" accept="image/*" class="text-sm">
+    <div class="cart-container">
+        <div class="order-form">
+            <h2 class="text-lg font-semibold mb-4">Личные данные</h2>
+            <div class="form-group">
+                <img src="https://via.placeholder.com/120" alt="Аватар" class="avatar">
+            </div>
+            <label for="fullName">ФИО</label>
+            <input type="text" id="fullName" placeholder="Введите ваше ФИО" required>
+
+            <label for="phone">Телефон</label>
+            <input type="text" id="phone" placeholder="Введите ваш номер телефона" required>
+
+            <button class="btn-save" onclick="saveProfile()">Сохранить</button>
         </div>
-        <div class="form-group">
-            <input type="text" id="username" placeholder="Имя пользователя" class="text-sm">
-        </div>
-        <button class="btn-save" onclick="saveProfile()">
-            <i class="fas fa-save"></i> Сохранить
-        </button>
     </div>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-item" id="home-nav">
+        <a href="/" class="nav-item" id="home-nav">
             <i class="fas fa-home"></i>
         </a>
         <a href="#" class="nav-item" id="search-nav">
             <i class="fas fa-search"></i>
         </a>
-        <a href="favorites.html" class="nav-item" id="favorites-nav">
+        <a href="/favorites.html" class="nav-item" id="favorites-nav">
             <i class="fas fa-heart"></i>
-            <span class="badge" id="favorites-count">0</span>
         </a>
-        <a href="cart.html" class="nav-item" id="cart-nav">
+        <a href="/cart.html" class="nav-item" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
-            <span class="badge" id="cart-count">0</span>
         </a>
-        <a href="profile.html" class="nav-item active" id="profile-nav">
+        <a href="/profile.html" class="nav-item active" id="profile-nav">
             <i class="fas fa-user"></i>
         </a>
     </nav>
@@ -182,60 +60,51 @@
 
         const userId = tg.initDataUnsafe.user?.id || 'default';
 
-        function loadProfile() {
-            const profile = JSON.parse(localStorage.getItem(`profile_${userId}`)) || {};
-            document.getElementById('username').value = profile.username || '';
-            if (profile.avatar) {
-                document.getElementById('avatar-preview').src = profile.avatar;
+        function loadLocalData() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+                const storedProfile = localStorage.getItem(`profile_${userId}`);
+                if (storedProfile) {
+                    const profile = JSON.parse(storedProfile);
+                    document.getElementById('fullName').value = profile.fullName || '';
+                    document.getElementById('phone').value = profile.phone || '';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных профиля:', error);
+                tg.showAlert('Ошибка загрузки профиля.');
             }
         }
 
         function saveProfile() {
-            const username = document.getElementById('username').value;
-            const avatarFile = document.getElementById('avatar-upload').files[0];
-            const profile = JSON.parse(localStorage.getItem(`profile_${userId}`)) || {};
-
-            if (username) profile.username = username;
-            if (avatarFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    profile.avatar = e.target.result;
-                    document.getElementById('avatar-preview').src = e.target.result;
-                    localStorage.setItem(`profile_${userId}`, JSON.stringify(profile));
-                };
-                reader.readAsDataURL(avatarFile);
+            const profile = {
+                fullName: document.getElementById('fullName').value,
+                phone: document.getElementById('phone').value
+            };
+            try {
+                localStorage.setItem(`profile_${userId}`, JSON.stringify(profile));
+                tg.showAlert('Профиль сохранён!');
+            } catch (error) {
+                console.error('Ошибка сохранения профиля:', error);
+                tg.showAlert('Ошибка сохранения профиля.');
             }
-
-            localStorage.setItem(`profile_${userId}`, JSON.stringify(profile));
-            tg.showAlert('Профиль успешно сохранён!');
         }
 
-        function updateCartCount() {
-            const cartItems = JSON.parse(localStorage.getItem(`cart_${userId}`)) || [];
-            document.getElementById('cart-count').textContent = cartItems.length || 0;
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            tg.showAlert(`Тема изменена на ${newTheme === 'light' ? 'светлую' : 'тёмную'}`);
         }
-
-        function updateFavoritesCount() {
-            const favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
-            document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
-        }
-
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', function(event) {
-                event.preventDefault();
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                const href = this.getAttribute('href');
-                if (href && href !== '#') {
-                    window.location.href = href;
-                }
-            });
-        });
 
         window.onload = () => {
-            loadProfile();
-            updateCartCount();
-            updateFavoritesCount();
+            console.log('Загрузка страницы profile.html');
+            loadLocalData();
         };
     </script>
 </body>
