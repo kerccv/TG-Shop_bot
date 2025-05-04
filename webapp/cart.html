@@ -70,19 +70,19 @@
             background-color: #dc2626;
         }
         .btn-order {
-           background-color: #3b82f6;
-           color: white;
-           border: none;
-           padding: 0.75rem 1.5rem;
-           border-radius: 4px;
-           cursor: pointer;
-           width: 100%; /* Или укажите нужную ширину, например, 50% или 200px */
-           max-width: 300px; /* Ограничение максимальной ширины */
-           margin: 1rem auto; /* Центрирование кнопки */
-           display: block; /* Для корректного центрирования */
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            margin: 1rem auto;
+            display: block;
         }
         .btn-order:hover {
-           background-color: #2563eb;
+            background-color: #2563eb;
         }
         .navbar {
             position: fixed;
@@ -125,6 +125,27 @@
         .nav-item i {
             font-size: 1.5rem;
         }
+        .order-form {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .order-form label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+            color: #1f2937;
+        }
+        .order-form input, .order-form select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -135,6 +156,43 @@
     <div class="cart-container" id="cart-container">
         <!-- Товары корзины будут добавлены через JavaScript -->
     </div>
+
+    <div class="cart-container">
+        <div class="order-form">
+            <h2 class="text-lg font-semibold mb-4">Оформление заказа</h2>
+            <label for="fullName">ФИО</label>
+            <input type="text" id="fullName" placeholder="Введите ваше ФИО" required>
+
+            <label for="phone">Телефон</label>
+            <input type="text" id="phone" placeholder="Введите ваш номер телефона" required>
+
+            <label for="paymentType">Тип оплаты</label>
+            <select id="paymentType" required>
+                <option value="">Выберите тип оплаты</option>
+                <option value="Наличные">Наличные</option>
+                <option value="Картой">Картой</option>
+            </select>
+
+            <label for="region">Область</label>
+            <input type="text" id="region" placeholder="Введите область" required>
+
+            <label for="city">Город</label>
+            <input type="text" id="city" placeholder="Введите город" required>
+
+            <label for="street">Улица</label>
+            <input type="text" id="street" placeholder="Введите улицу" required>
+
+            <label for="house">Номер дома</label>
+            <input type="text" id="house" placeholder="Введите номер дома" required>
+
+            <label for="apartment">Номер квартиры</label>
+            <input type="text" id="apartment" placeholder="Введите номер квартиры (если есть)">
+
+            <label for="floor">Этаж</label>
+            <input type="text" id="floor" placeholder="Введите этаж (если есть)">
+        </div>
+    </div>
+
     <button class="btn-order" onclick="placeOrder()">Оформить заказ</button>
 
     <nav class="navbar">
@@ -225,16 +283,22 @@
             }
 
             const userInfo = {
-                fullName: prompt('Введите ФИО:') || 'Не указано',
-                phone: prompt('Введите телефон:') || 'Не указан',
-                paymentType: prompt('Введите тип оплаты:') || 'Не указан',
-                region: prompt('Введите область:') || 'Не указана',
-                city: prompt('Введите город:') || 'Не указан',
-                street: prompt('Введите улицу:') || 'Не указана',
-                house: prompt('Введите номер дома:') || 'Не указан',
-                apartment: prompt('Введите номер квартиры:') || 'Не указан',
-                floor: prompt('Введите этаж:') || 'Не указан'
+                fullName: document.getElementById('fullName').value || 'Не указано',
+                phone: document.getElementById('phone').value || 'Не указан',
+                paymentType: document.getElementById('paymentType').value || 'Не указан',
+                region: document.getElementById('region').value || 'Не указана',
+                city: document.getElementById('city').value || 'Не указан',
+                street: document.getElementById('street').value || 'Не указана',
+                house: document.getElementById('house').value || 'Не указан',
+                apartment: document.getElementById('apartment').value || 'Не указан',
+                floor: document.getElementById('floor').value || 'Не указан'
             };
+
+            // Проверка обязательных полей
+            if (!userInfo.fullName || !userInfo.phone || !userInfo.paymentType || !userInfo.region || !userInfo.city || !userInfo.street || !userInfo.house) {
+                tg.showAlert('Пожалуйста, заполните все обязательные поля!');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/orders', {
@@ -256,6 +320,16 @@
                     cartItems = [];
                     saveLocalData();
                     displayCart();
+                    // Очистка формы после успешного заказа
+                    document.getElementById('fullName').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('paymentType').value = '';
+                    document.getElementById('region').value = '';
+                    document.getElementById('city').value = '';
+                    document.getElementById('street').value = '';
+                    document.getElementById('house').value = '';
+                    document.getElementById('apartment').value = '';
+                    document.getElementById('floor').value = '';
                     tg.showAlert('Заказ успешно оформлен!');
                 }
             } catch (error) {
