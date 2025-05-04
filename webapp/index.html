@@ -447,10 +447,22 @@
         }
 
         async function loadProducts() {
+            console.log('Загрузка товаров с /api/products');
             try {
-                const response = await fetch('/api/products');
-                if (!response.ok) throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
+                const response = await fetch('/api/products', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                console.log('Статус ответа:', response.status);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Ошибка: ${response.status} ${response.statusText} - ${errorText}`);
+                }
                 allProducts = await response.json();
+                console.log('Товары успешно загружены:', allProducts);
                 document.getElementById('results-count').textContent = `Результатов: ${allProducts.length}`;
                 sortProducts();
             } catch (error) {
