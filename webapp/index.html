@@ -55,6 +55,7 @@
             padding: 1rem;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             transition: transform 0.2s ease-in-out;
+            cursor: pointer;
         }
         .product-card:hover {
             transform: translateY(-3px);
@@ -72,10 +73,22 @@
             margin-top: 0.5rem;
             text-align: center;
         }
+        .product-description {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-align: center;
+            margin: 0.25rem 0;
+        }
         .product-price {
             font-size: 0.875rem;
             color: #4b5563;
             text-align: center;
+        }
+        .product-tags {
+            font-size: 0.625rem;
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 0.25rem;
         }
         .rating {
             display: flex;
@@ -166,6 +179,75 @@
         .btn-cart:hover {
             background-color: #2563eb;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .modal-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .modal-description {
+            font-size: 0.875rem;
+            color: #6b7280;
+            text-align: center;
+            margin: 0.5rem 0;
+        }
+        .modal-price {
+            font-size: 1rem;
+            color: #4b5563;
+            text-align: center;
+        }
+        .modal-tags {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+        .modal-rating {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            margin-top: 0.5rem;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -184,22 +266,34 @@
         </div>
     </div>
 
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></span>
+            <img id="modal-image" class="modal-image" src="" alt="Товар">
+            <p id="modal-name" class="modal-name"></p>
+            <p id="modal-description" class="modal-description"></p>
+            <p id="modal-price" class="modal-price"></p>
+            <p id="modal-tags" class="modal-tags"></p>
+            <div id="modal-rating" class="modal-rating"></div>
+        </div>
+    </div>
+
     <nav class="navbar">
-        <a href="#" class="nav-item active" id="home-nav">
+        <a href="index.html" class="nav-item active" id="home-nav">
             <i class="fas fa-home"></i>
         </a>
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" id="search-nav">
             <i class="fas fa-search"></i>
         </a>
-        <a href="#" class="nav-item">
+        <a href="favorites.html" class="nav-item" id="favorites-nav">
             <i class="fas fa-heart"></i>
             <span class="badge" id="favorites-count">0</span>
         </a>
-        <a href="#" class="nav-item">
+        <a href="cart.html" class="nav-item" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
             <span class="badge" id="cart-count">0</span>
         </a>
-        <a href="profile.html" class="nav-item">
+        <a href="profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
         </a>
     </nav>
@@ -233,23 +327,35 @@
                         stars[i] = '★';
                     }
 
-                    const productCard = `
-                        <div class="product-card">
-                            <img src="${product.image || 'https://via.placeholder.com/150'}" alt="${product.name}" class="product-image">
-                            <p class="product-name">${product.name}</p>
-                            <p class="product-price">${product.price} грн.</p>
-                            <div class="rating">
-                                ${stars.join('')}
-                                <span class="ml-1 text-xs text-gray-600">(${ratingCount})</span>
-                            </div>
-                            <button class="btn-favorite mt-2" onclick="addToFavorites(${product.id})">
-                                <i class="fas fa-heart"></i> Избранное
-                            </button>
-                            <button class="btn-cart mt-2" onclick="addToCart(${product.id})">
-                                <i class="fas fa-shopping-cart"></i> В корзину
-                            </button>
-                        </div>`;
-                    productsContainer.innerHTML += productCard;
+                    const productCard = document.createElement('div');
+                    productCard.className = 'product-card';
+                    productCard.innerHTML = `
+                        <img src="${product.image || 'https://via.placeholder.com/150'}" alt="${product.name}" class="product-image">
+                        <p class="product-name">${product.name}</p>
+                        <p class="product-description">${product.description || 'Описание отсутствует'}</p>
+                        <p class="product-price">${product.price} грн.</p>
+                        <p class="product-tags">${product.tags ? product.tags.join(', ') : ''}</p>
+                        <div class="rating">
+                            ${stars.join('')}
+                            <span class="ml-1 text-xs text-gray-600">(${ratingCount})</span>
+                        </div>
+                        <button class="btn-favorite mt-2">
+                            <i class="fas fa-heart"></i> Избранное
+                        </button>
+                        <button class="btn-cart mt-2">
+                            <i class="fas fa-shopping-cart"></i> В корзину
+                        </button>
+                    `;
+                    productCard.querySelector('.btn-favorite').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        addToFavorites(product.id);
+                    });
+                    productCard.querySelector('.btn-cart').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        addToCart(product.id);
+                    });
+                    productCard.addEventListener('click', () => openModal(product));
+                    productsContainer.appendChild(productCard);
                 });
             } catch (error) {
                 console.error('Ошибка загрузки товаров:', error);
@@ -268,6 +374,9 @@
                     cartItems = await response.json();
                     updateCartCount();
                     tg.showAlert('Товар добавлен в корзину!');
+                } else {
+                    const errorText = await response.text();
+                    tg.showAlert(`Ошибка при добавлении в корзину: ${errorText}`);
                 }
             } catch (error) {
                 console.error('Ошибка добавления в корзину:', error);
@@ -286,6 +395,9 @@
                     favoriteItems = await response.json();
                     updateFavoritesCount();
                     tg.showAlert('Товар добавлен в избранное!');
+                } else {
+                    const errorText = await response.text();
+                    tg.showAlert(`Ошибка при добавлении в избранное: ${errorText}`);
                 }
             } catch (error) {
                 console.error('Ошибка добавления в избранное:', error);
@@ -296,8 +408,10 @@
         async function updateCartCount() {
             try {
                 const response = await fetch(`/api/cart/${tg.initDataUnsafe.user?.id || 'default'}`);
-                cartItems = await response.json();
-                document.getElementById('cart-count').textContent = cartItems.length || 0;
+                if (response.ok) {
+                    cartItems = await response.json();
+                    document.getElementById('cart-count').textContent = cartItems.length || 0;
+                }
             } catch (error) {
                 console.error('Ошибка обновления корзины:', error);
             }
@@ -306,11 +420,39 @@
         async function updateFavoritesCount() {
             try {
                 const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user?.id || 'default'}`);
-                favoriteItems = await response.json();
-                document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
+                if (response.ok) {
+                    favoriteItems = await response.json();
+                    document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
+                }
             } catch (error) {
                 console.error('Ошибка обновления избранного:', error);
             }
+        }
+
+        function openModal(product) {
+            const modal = document.getElementById('product-modal');
+            document.getElementById('modal-image').src = product.image || 'https://via.placeholder.com/150';
+            document.getElementById('modal-name').textContent = product.name;
+            document.getElementById('modal-description').textContent = product.description || 'Описание отсутствует';
+            document.getElementById('modal-price').textContent = `${product.price} грн.`;
+            document.getElementById('modal-tags').textContent = product.tags ? product.tags.join(', ') : '';
+            const avgRating = product.ratings && product.ratings.length > 0 
+                ? (product.ratings.reduce((sum, r) => sum + r.rating, 0) / product.ratings.length).toFixed(1) 
+                : 0;
+            const ratingCount = product.ratings ? product.ratings.length : 0;
+            const stars = Array(5).fill('☆');
+            for (let i = 0; i < Math.floor(avgRating); i++) {
+                stars[i] = '★';
+            }
+            document.getElementById('modal-rating').innerHTML = `${stars.join('')} <span class="ml-1 text-xs text-gray-600">(${ratingCount})</span>`;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('product-modal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
         }
 
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -318,7 +460,10 @@
                 event.preventDefault();
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
-                if (this.id === 'home-nav') {
+                const href = this.getAttribute('href');
+                if (href && href !== '#') {
+                    window.location.href = href;
+                } else if (this.id === 'home-nav') {
                     loadProducts();
                 }
             });

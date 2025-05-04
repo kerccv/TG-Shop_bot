@@ -66,10 +66,22 @@
             margin-top: 0.5rem;
             text-align: center;
         }
+        .cart-description {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-align: center;
+            margin: 0.25rem 0;
+        }
         .cart-price {
             font-size: 0.875rem;
             color: #4b5563;
             text-align: center;
+        }
+        .cart-tags {
+            font-size: 0.625rem;
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 0.25rem;
         }
         .btn-remove {
             width: 100%;
@@ -163,25 +175,25 @@
         <div class="cart-grid" id="cart-items">
             <!-- Товары будут добавлены через JavaScript -->
         </div>
-        <div class="total" id="total-price">Итого: 0 р.</div>
+        <div class="total" id="total-price">Итого: 0 грн.</div>
     </div>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-item">
+        <a href="index.html" class="nav-item" id="home-nav">
             <i class="fas fa-home"></i>
         </a>
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" id="search-nav">
             <i class="fas fa-search"></i>
         </a>
-        <a href="favorites.html" class="nav-item">
+        <a href="favorites.html" class="nav-item" id="favorites-nav">
             <i class="fas fa-heart"></i>
             <span class="badge" id="favorites-count">0</span>
         </a>
-        <a href="cart.html" class="nav-item active">
+        <a href="cart.html" class="nav-item active" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
             <span class="badge" id="cart-count-nav">0</span>
         </a>
-        <a href="profile.html" class="nav-item">
+        <a href="profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
         </a>
     </nav>
@@ -206,20 +218,24 @@
                 cartCount.textContent = `Товаров: ${cartItems.length}`;
                 cartCountNav.textContent = cartItems.length || 0;
 
-                const totalPrice = cartItems.reduce((sum, item) => sum + item.price, 0);
-                document.getElementById('total-price').textContent = `Итого: ${totalPrice} р.`;
+                const totalPrice = cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
+                document.getElementById('total-price').textContent = `Итого: ${totalPrice} грн.`;
 
                 cartItems.forEach(item => {
-                    const cartItem = `
-                        <div class="cart-item">
-                            <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}" class="cart-image">
-                            <p class="cart-name">${item.name}</p>
-                            <p class="cart-price">${item.price} грн.</p>
-                            <button class="btn-remove" onclick="removeFromCart(${item.id})">
-                                <i class="fas fa-trash"></i> Удалить
-                            </button>
-                        </div>`;
-                    cartItemsContainer.innerHTML += cartItem;
+                    const cartItem = document.createElement('div');
+                    cartItem.className = 'cart-item';
+                    cartItem.innerHTML = `
+                        <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}" class="cart-image">
+                        <p class="cart-name">${item.name}</p>
+                        <p class="cart-description">${item.description || 'Описание отсутствует'}</p>
+                        <p class="cart-price">${item.price || 0} грн.</p>
+                        <p class="cart-tags">${item.tags ? item.tags.join(', ') : ''}</p>
+                        <button class="btn-remove">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    `;
+                    cartItem.querySelector('.btn-remove').addEventListener('click', () => removeFromCart(item.id));
+                    cartItemsContainer.appendChild(cartItem);
                 });
             } catch (error) {
                 console.error('Ошибка загрузки корзины:', error);
@@ -238,6 +254,9 @@
                     cartItems = await response.json();
                     loadCart();
                     tg.showAlert('Товар удален из корзины!');
+                } else {
+                    const errorText = await response.text();
+                    tg.showAlert(`Ошибка при удалении: ${errorText}`);
                 }
             } catch (error) {
                 console.error('Ошибка удаления из корзины:', error);
@@ -248,8 +267,10 @@
         async function updateFavoritesCount() {
             try {
                 const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user?.id || 'default'}`);
-                favoriteItems = await response.json();
-                document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
+                if (response.ok) {
+                    const favoriteItems = await response.json();
+                    document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
+                }
             } catch (error) {
                 console.error('Ошибка обновления избранного:', error);
             }
@@ -260,6 +281,10 @@
                 event.preventDefault();
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
+                const href = this.getAttribute('href');
+                if (href && href !== '#') {
+                    window.location.href = href;
+                }
             });
         });
 

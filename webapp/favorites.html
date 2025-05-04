@@ -66,10 +66,22 @@
             margin-top: 0.5rem;
             text-align: center;
         }
+        .favorite-description {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-align: center;
+            margin: 0.25rem 0;
+        }
         .favorite-price {
             font-size: 0.875rem;
             color: #4b5563;
             text-align: center;
+        }
+        .favorite-tags {
+            font-size: 0.625rem;
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 0.25rem;
         }
         .btn-remove {
             width: 100%;
@@ -159,21 +171,21 @@
     </div>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-item">
+        <a href="index.html" class="nav-item" id="home-nav">
             <i class="fas fa-home"></i>
         </a>
-        <a href="#" class="nav-item">
+        <a href="#" class="nav-item" id="search-nav">
             <i class="fas fa-search"></i>
         </a>
-        <a href="favorites.html" class="nav-item active">
+        <a href="favorites.html" class="nav-item active" id="favorites-nav">
             <i class="fas fa-heart"></i>
             <span class="badge" id="favorites-count-nav">0</span>
         </a>
-        <a href="cart.html" class="nav-item">
+        <a href="cart.html" class="nav-item" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
             <span class="badge" id="cart-count">0</span>
         </a>
-        <a href="profile.html" class="nav-item">
+        <a href="profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
         </a>
     </nav>
@@ -199,16 +211,20 @@
                 favoritesCountNav.textContent = favoriteItems.length || 0;
 
                 favoriteItems.forEach(item => {
-                    const favoriteItem = `
-                        <div class="favorite-item">
-                            <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
-                            <p class="favorite-name">${item.name}</p>
-                            <p class="favorite-price">${item.price} грн.</p>
-                            <button class="btn-remove" onclick="removeFromFavorites(${item.id})">
-                                <i class="fas fa-trash"></i> Удалить
-                            </button>
-                        </div>`;
-                    favoriteItemsContainer.innerHTML += favoriteItem;
+                    const favoriteItem = document.createElement('div');
+                    favoriteItem.className = 'favorite-item';
+                    favoriteItem.innerHTML = `
+                        <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
+                        <p class="favorite-name">${item.name}</p>
+                        <p class="favorite-description">${item.description || 'Описание отсутствует'}</p>
+                        <p class="favorite-price">${item.price || 0} грн.</p>
+                        <p class="favorite-tags">${item.tags ? item.tags.join(', ') : ''}</p>
+                        <button class="btn-remove">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    `;
+                    favoriteItem.querySelector('.btn-remove').addEventListener('click', () => removeFromFavorites(item.id));
+                    favoriteItemsContainer.appendChild(favoriteItem);
                 });
             } catch (error) {
                 console.error('Ошибка загрузки избранного:', error);
@@ -227,6 +243,9 @@
                     favoriteItems = await response.json();
                     loadFavorites();
                     tg.showAlert('Товар удален из избранного!');
+                } else {
+                    const errorText = await response.text();
+                    tg.showAlert(`Ошибка при удалении: ${errorText}`);
                 }
             } catch (error) {
                 console.error('Ошибка удаления из избранного:', error);
@@ -237,8 +256,10 @@
         async function updateCartCount() {
             try {
                 const response = await fetch(`/api/cart/${tg.initDataUnsafe.user?.id || 'default'}`);
-                cartItems = await response.json();
-                document.getElementById('cart-count').textContent = cartItems.length || 0;
+                if (response.ok) {
+                    const cartItems = await response.json();
+                    document.getElementById('cart-count').textContent = cartItems.length || 0;
+                }
             } catch (error) {
                 console.error('Ошибка обновления корзины:', error);
             }
@@ -249,6 +270,10 @@
                 event.preventDefault();
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
+                const href = this.getAttribute('href');
+                if (href && href !== '#') {
+                    window.location.href = href;
+                }
             });
         });
 
