@@ -422,7 +422,6 @@
         let itemsPerPage = 25;
         const userId = tg.initDataUnsafe.user?.id || 'default';
 
-        // Локальное хранилище через localStorage
         function loadLocalData() {
             try {
                 const storedCart = localStorage.getItem(`cart_${userId}`);
@@ -450,9 +449,7 @@
         async function loadProducts() {
             try {
                 const response = await fetch('/api/products');
-                if (!response.ok) {
-                    throw new Error(`Ошибка загрузки товаров: ${response.status} ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
                 allProducts = await response.json();
                 document.getElementById('results-count').textContent = `Результатов: ${allProducts.length}`;
                 sortProducts();
@@ -464,15 +461,10 @@
 
         function sortProducts() {
             const sortBy = document.getElementById('sort-by').value;
-            if (sortBy === 'price-asc') {
-                allProducts.sort((a, b) => a.price - b.price);
-            } else if (sortBy === 'price-desc') {
-                allProducts.sort((a, b) => b.price - a.price);
-            } else if (sortBy === 'name-asc') {
-                allProducts.sort((a, b) => a.name.localeCompare(b.name));
-            } else if (sortBy === 'name-desc') {
-                allProducts.sort((a, b) => b.name.localeCompare(a.name));
-            }
+            if (sortBy === 'price-asc') allProducts.sort((a, b) => a.price - b.price);
+            else if (sortBy === 'price-desc') allProducts.sort((a, b) => b.price - a.price);
+            else if (sortBy === 'name-asc') allProducts.sort((a, b) => a.name.localeCompare(b.name));
+            else if (sortBy === 'name-desc') allProducts.sort((a, b) => b.name.localeCompare(a.name));
             displayProducts();
         }
 
@@ -485,7 +477,6 @@
         function displayProducts() {
             const productsContainer = document.getElementById('products-container');
             productsContainer.innerHTML = '';
-
             const start = (currentPage - 1) * itemsPerPage;
             const end = start + itemsPerPage;
             const paginatedProducts = allProducts.slice(start, end);
@@ -538,11 +529,8 @@
             const product = allProducts.find(p => p.id === productId);
             const isFavorite = favoriteItems.some(item => item.id === productId);
 
-            if (isFavorite) {
-                favoriteItems = favoriteItems.filter(item => item.id !== productId);
-            } else {
-                favoriteItems.push(product);
-            }
+            if (isFavorite) favoriteItems = favoriteItems.filter(item => item.id !== productId);
+            else favoriteItems.push(product);
 
             saveLocalData();
             updateFavoritesCount();
@@ -560,11 +548,8 @@
             }
             const existingItem = cartItems.find(item => item.id === productId);
 
-            if (existingItem) {
-                existingItem.quantity = (existingItem.quantity || 1) + (quantity || 1);
-            } else {
-                cartItems.push({ ...product, quantity: quantity || 1 });
-            }
+            if (existingItem) existingItem.quantity = (existingItem.quantity || 0) + (quantity || 1);
+            else cartItems.push({ ...product, quantity: quantity || 1 });
 
             console.log('Текущая корзина:', cartItems);
             saveLocalData();
@@ -579,48 +564,54 @@
         }
 
         function updateCartCount() {
-            const count = cartItems.length || 0;
+            const count = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
             console.log('Обновление счётчика корзины:', count);
             document.getElementById('cart-count').textContent = count;
         }
 
         function updateFavoritesCount() {
-            const count = favoriteItems.length || 0;
+            const count = favoriteItems.length;
             console.log('Обновление счётчика избранного:', count);
             document.getElementById('favorites-count').textContent = count;
         }
 
         function openModal(product) {
-            const modal = document.getElementById('modal');
-            const modalImage = document.getElementById('modal-image');
-            const imageUrls = product.image_url ? product.image_url.split(',') : ['https://via.placeholder.com/150'];
-            let currentImageIndex = 0;
-
-            modalImage.src = imageUrls[0];
-            document.getElementById('modal-name').textContent = product.name;
-            document.getElementById('modal-description').textContent = product.description || 'Описание отсутствует';
-            document.getElementById('modal-price').textContent = `${product.price} грн`;
-            document.getElementById('modal-quantity-select').value = 1;
-            document.getElementById('modal-favorite-btn').dataset.id = product.id;
-            document.getElementById('modal-cart-btn').dataset.id = product.id;
-
-            modalImage.onclick = () => {
-                currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
-                modalImage.src = imageUrls[currentImageIndex];
-                if (imageUrls.length > 1) {
-                    modalImage.classList.add('active');
-                }
-            };
-
-            modal.style.display = 'flex';
+            const modal = document.createElement('div');
+            modal.id = 'modal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="modal-close" onclick="closeModal()">×</span>
+                    <img id="modal-image" class="modal-image" src="${(product.image_url && product.image_url.split(',')[0]) || 'https://via.placeholder.com/150'}" alt="${product.name}">
+                    <p id="modal-name" class="modal-name">${product.name}</p>
+                    <p id="modal-description" class="modal-description">${product.description || 'Описание отсутствует'}</p>
+                    <p id="modal-price" class="modal-price">${product.price} грн</p>
+                    <div class="modal-quantity">
+                        <label for="modal-quantity-select">Количество:</label>
+                        <select id="modal-quantity-select">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button id="modal-favorite-btn" class="btn-favorite-modal" data-id="${product.id}" onclick="toggleFavorite(event)">В избранное</button>
+                        <button id="modal-cart-btn" class="btn-cart-modal" data-id="${product.id}" onclick="addToCart(parseInt(this.dataset.id), parseInt(document.getElementById('modal-quantity-select').value)); closeModal()">В корзину</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
             setTimeout(() => modal.classList.add('active'), 10);
         }
 
         function closeModal() {
             const modal = document.getElementById('modal');
-            modal.classList.remove('active');
-            setTimeout(() => modal.style.display = 'none', 300);
-            document.getElementById('modal-image').classList.remove('active');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
         }
 
         function openSearchModal() {
@@ -634,10 +625,9 @@
 
         function searchProducts() {
             const query = document.getElementById('search-input').value.toLowerCase();
-            const filteredProducts = allProducts.filter(product =>
+            allProducts = allProducts.filter(product =>
                 product.name.toLowerCase().includes(query) || (product.tags && product.tags.some(tag => tag.toLowerCase().includes(query)))
             );
-            allProducts = filteredProducts;
             currentPage = 1;
             displayProducts();
         }
@@ -648,11 +638,8 @@
                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
                 const href = this.getAttribute('href');
-                if (href && href !== '#') {
-                    window.location.href = href;
-                } else if (this.id === 'search-nav') {
-                    openSearchModal();
-                }
+                if (href && href !== '#') window.location.href = href;
+                else if (this.id === 'search-nav') openSearchModal();
             });
         });
 
@@ -662,29 +649,5 @@
             loadProducts();
         };
     </script>
-
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal()">×</span>
-            <img id="modal-image" class="modal-image" src="" alt="Товар">
-            <p id="modal-name" class="modal-name"></p>
-            <p id="modal-description" class="modal-description"></p>
-            <p id="modal-price" class="modal-price"></p>
-            <div class="modal-quantity">
-                <label for="modal-quantity-select">Количество:</label>
-                <select id="modal-quantity-select">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button id="modal-favorite-btn" class="btn-favorite-modal" onclick="toggleFavorite(event)">В избранное</button>
-                <button id="modal-cart-btn" class="btn-cart-modal" onclick="addToCart(parseInt(this.dataset.id), parseInt(document.getElementById('modal-quantity-select').value)); closeModal()">В корзину</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>

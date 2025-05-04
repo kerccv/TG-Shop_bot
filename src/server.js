@@ -14,21 +14,14 @@ app.use(express.json());
 // Настройка раздачи статических файлов из папки webapp
 app.use(express.static(path.join(process.cwd(), 'webapp')));
 
-// Явные маршруты для HTML-страниц
-app.get('/', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'webapp', 'index.html'));
-});
-
-app.get('/cart.html', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'webapp', 'cart.html'));
-});
-
-app.get('/favorites.html', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'webapp', 'favorites.html'));
-});
-
-app.get('/profile.html', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'webapp', 'profile.html'));
+// Динамическая маршрутизация для HTML-страниц
+app.get('/*', (req, res) => {
+    const filePath = path.join(process.cwd(), 'webapp', req.path === '/' ? 'index.html' : req.path);
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            res.status(404).sendFile(path.join(process.cwd(), 'webapp', 'index.html'));
+        }
+    });
 });
 
 // Настройка Supabase
@@ -38,7 +31,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Настройка Telegram Bot
 const botToken = process.env.BOT_TOKEN;
-const adminChatId = process.env.ADMIN_CHAT_ID;
+const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',') : [];
 
 // Маршрут для получения всех продуктов
 app.get('/api/products', async (req, res) => {
@@ -77,15 +70,17 @@ app.post('/api/orders', async (req, res) => {
         `;
         const message = `Новый заказ:\n\n${itemsText}\n\n${userText}`;
 
-        // Отправка уведомления админу через Telegram Bot
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: adminChatId,
-                text: message
-            })
-        });
+        // Отправка уведомлений всем админам
+        for (const adminId of adminIds) {
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: adminId,
+                    text: message
+                })
+            });
+        }
 
         res.json({ success: true });
     } catch (error) {
