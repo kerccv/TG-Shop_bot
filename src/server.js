@@ -17,20 +17,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Настройка раздачи статических файлов из папки webapp
-app.use(express.static(path.join(process.cwd(), 'webapp')));
-
-// Динамическая маршрутизация для HTML-страниц
-app.get('/*', (req, res) => {
-    const filePath = path.join(process.cwd(), 'webapp', req.path === '/' ? 'index.html' : req.path);
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            console.log(`Файл не найден: ${filePath}, возвращаем index.html`);
-            res.status(404).sendFile(path.join(process.cwd(), 'webapp', 'index.html'));
-        }
-    });
-});
-
 // Настройка Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -132,6 +118,20 @@ app.post('/api/orders', async (req, res) => {
         console.error('Ошибка обработки заказа:', error.message);
         res.status(500).json({ error: `Ошибка сервера при обработке заказа: ${error.message}` });
     }
+});
+
+// Настройка раздачи статических файлов из папки webapp
+app.use(express.static(path.join(process.cwd(), 'webapp')));
+
+// Динамическая маршрутизация для HTML-страниц
+app.get('/*', (req, res) => {
+    const filePath = path.join(process.cwd(), 'webapp', req.path === '/' ? 'index.html' : req.path);
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.log(`Файл не найден: ${filePath}, возвращаем index.html`);
+            res.status(404).sendFile(path.join(process.cwd(), 'webapp', 'index.html'));
+        }
+    });
 });
 
 app.listen(3000, () => {
