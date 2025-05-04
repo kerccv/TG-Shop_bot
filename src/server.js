@@ -1,75 +1,80 @@
-import express from "express";
-import path from "path";
-import cors from "cors";
-import * as dotenv from "dotenv";
-import { bot } from "./bot.js";
-import { logger } from "./utils.js";
-import { getVisibleProducts, testSupabaseConnection } from "./supabase.js";
-
-// Загрузка переменных окружения
-dotenv.config();
+require('dotenv').config();
+const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
+const cors = require('cors');
+const path = require('path');
+const fetch = require('node-fetch');
 
 const app = express();
-const PORT = process.env.PORT || 10000; // Используем PORT из окружения
-const __dirname = path.resolve();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use("/webapp", express.static(path.join(__dirname, "webapp")));
-app.use("/public", express.static(path.join(__dirname, "public")));
 
-// Webhook для Telegram
-app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
-  bot.handleUpdate(req.body, res);
-  logger.info("Webhook request processed");
-});
+// Настройка Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// API для веб-приложения
-app.get("/api/products", async (req, res) => {
-  logger.info("Received /api/products request");
-  try {
-    const products = await getVisibleProducts();
-    res.json(products);
-  } catch (err) {
-    logger.error("Error in /api/products", { error: err.message });
-    res.status(500).json({ error: err.message });
-  }
-});
+// Настройка Telegram Bot
+const botToken = process.env.BOT_TOKEN;
+const adminChatId = process.env.ADMIN_CHAT_ID;
 
-// Тестовое подключение к Supabase
-app.get("/test-supabase", async (req, res) => {
-  logger.info("Received /test-supabase request");
-  try {
-    const result = await testSupabaseConnection();
-    res.json(result);
-  } catch (err) {
-    logger.error("Error in /test-supabase", { error: err.message });
-    res.status(500).json({ error: err.message });
-  }
-});
+// Статические файлы (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Keep-alive для Render
-const keepAlive = () => {
-  setInterval(async () => {
+// Маршрут для получения всех продуктов
+app.get('/api/products', async (req, res) => {
     try {
-      await fetch(`https://${process.env.RENDER_EXTERNAL_HOSTNAME}/api/products`);
-      logger.info("Keep-alive ping sent");
-    } catch (err) {
-      logger.error("Keep-alive ping failed", { error: err.message });
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Ошибка получения продуктов:', error);
+        res.status(500).json({ error: 'Ошибка сервера при получении продуктов' });
     }
-  }, 5 * 60 * 1000); // Каждые 5 минут
-};
+});
 
-// Запуск сервера
-app.listen(PORT, async () => {
-  logger.info(`Server started on port ${PORT}`);
-  try {
-    const webhookUrl = `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/bot${process.env.BOT_TOKEN}`;
-    await bot.telegram.setWebhook(webhookUrl);
-    logger.info("Webhook set", { webhookUrl });
-    keepAlive();
-  } catch (err) {
-    logger.error("Error setting webhook", { error: err.message });
-  }
+// Маршрут для сохранения заказа и отправки уведомления админу
+app.post('/api/orders', async (req, res) => {
+    try {
+        const { userId, orderDetails, userInfo } = req.body;
+
+        // Сохранение заказа в Supabase
+        const { data, error } = await supabase
+            .from('orders')
+            .insert({ user_id: userId, order_details: orderDetails, user_info: userInfo })
+            .select();
+        if (error) throw error;
+
+        // Формирование сообщения для админа
+        const itemsText = orderDetails.map(item => 
+            `Товар: ${item.name}, Цена: ${item.price} грн, Кол-во: ${item.quantity}`
+        ).join('\n');
+        const userText = `
+Информация о пользователе:
+ФИО: ${userInfo.fullName}
+Телефон: ${userInfo.phone}
+Тип оплаты: ${userInfo.paymentType}
+Адрес: Украина, ${userInfo.region}, ${userInfo.city}, ул. ${userInfo.street}, дом ${userInfo.house}, кв. ${userInfo.apartment}, этаж ${userInfo.floor}
+        `;
+        const message = `Новый заказ:\n\n${itemsText}\n\n${userText}`;
+
+        // Отправка уведомления админу через Telegram Bot
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: adminChatId,
+                text: message
+            })
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Ошибка обработки заказа:', error);
+        res.status(500).json({ error: 'Ошибка сервера при обработке заказа' });
+    }
+});
+
+app.listen(3000, () => {
+    console.log('Сервер запущен на порту 3000');
 });

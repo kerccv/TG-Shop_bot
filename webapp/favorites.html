@@ -197,75 +197,50 @@
         tg.expand();
 
         let favoriteItems = [];
+        const userId = tg.initDataUnsafe.user?.id || 'default';
 
-        async function loadFavorites() {
-            try {
-                const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user?.id || 'default'}`);
-                if (!response.ok) {
-                    throw new Error(`Ошибка загрузки избранного: ${response.status} ${response.statusText}`);
-                }
-                favoriteItems = await response.json();
-                const favoriteItemsContainer = document.getElementById('favorite-items');
-                favoriteItemsContainer.innerHTML = '';
-                const favoritesCount = document.getElementById('favorites-count');
-                const favoritesCountNav = document.getElementById('favorites-count-nav');
-                favoritesCount.textContent = `Товаров: ${favoriteItems.length}`;
-                favoritesCountNav.textContent = favoriteItems.length || 0;
+        function loadFavorites() {
+            favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
+            const favoriteItemsContainer = document.getElementById('favorite-items');
+            favoriteItemsContainer.innerHTML = '';
+            const favoritesCount = document.getElementById('favorites-count');
+            const favoritesCountNav = document.getElementById('favorites-count-nav');
+            favoritesCount.textContent = `Товаров: ${favoriteItems.length}`;
+            favoritesCountNav.textContent = favoriteItems.length || 0;
 
-                favoriteItems.forEach(item => {
-                    const favoriteItem = document.createElement('div');
-                    favoriteItem.className = 'favorite-item';
-                    favoriteItem.innerHTML = `
-                        <img src="${item.image_url || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
-                        <p class="favorite-name">${item.name}</p>
-                        <p class="favorite-description">${item.description || 'Описание отсутствует'}</p>
-                        <p class="favorite-price">${item.price || 0} грн</p>
-                        <button class="btn-remove" onclick="removeFromFavorites(${item.id})">Удалить</button>
-                    `;
-                    favoriteItem.addEventListener('click', () => {
+            favoriteItems.forEach(item => {
+                const favoriteItem = document.createElement('div');
+                favoriteItem.className = 'favorite-item';
+                favoriteItem.innerHTML = `
+                    <img src="${item.image_url || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
+                    <p class="favorite-name">${item.name}</p>
+                    <p class="favorite-description">${item.description || 'Описание отсутствует'}</p>
+                    <p class="favorite-price">${item.price || 0} грн</p>
+                    <button class="btn-remove" onclick="removeFromFavorites(${item.id})">Удалить</button>
+                `;
+                favoriteItem.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('btn-remove')) {
                         tg.showAlert(`Товар: ${item.name}\nЦена: ${item.price} грн\nОписание: ${item.description}`);
-                    });
-                    favoriteItemsContainer.appendChild(favoriteItem);
+                    }
                 });
-            } catch (error) {
-                console.error('Ошибка загрузки избранного:', error);
-                document.getElementById('favorite-items').innerHTML = `<p class="error-message">Не удалось загрузить избранное: ${error.message}</p>`;
-            }
+                favoriteItemsContainer.appendChild(favoriteItem);
+            });
         }
 
-        async function removeFromFavorites(productId) {
-            try {
-                const response = await fetch('/api/favorites/remove', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId, userId: tg.initDataUnsafe.user?.id || 'default' })
-                });
-                if (response.ok) {
-                    favoriteItems = await response.json();
-                    loadFavorites();
-                    tg.showAlert('Товар удален из избранного!');
-                } else {
-                    const errorText = await response.text();
-                    tg.showAlert(`Ошибка при удалении: ${errorText}`);
-                }
-            } catch (error) {
-                console.error('Ошибка удаления из избранного:', error);
-                tg.showAlert('Ошибка при удалении из избранного');
-            }
+        function removeFromFavorites(productId) {
+            favoriteItems = favoriteItems.filter(item => item.id !== productId);
+            saveLocalData();
+            loadFavorites();
+            tg.showAlert('Товар удален из избранного!');
         }
 
-        async function updateCartCount() {
-            try {
-                const response = await fetch(`/api/cart/${tg.initDataUnsafe.user?.id || 'default'}`);
-                if (response.ok) {
-                    const cartItems = await response.json();
-                    document.getElementById('cart-count').textContent = cartItems.length || 0;
-                } else {
-                    console.error('Ошибка обновления корзины:', await response.text());
-                }
-            } catch (error) {
-                console.error('Ошибка обновления корзины:', error);
-            }
+        function updateCartCount() {
+            const cartItems = JSON.parse(localStorage.getItem(`cart_${userId}`)) || [];
+            document.getElementById('cart-count').textContent = cartItems.length || 0;
+        }
+
+        function saveLocalData() {
+            localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
         }
 
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -275,12 +250,7 @@
                 this.classList.add('active');
                 const href = this.getAttribute('href');
                 if (href && href !== '#') {
-                    try {
-                        window.location.href = href;
-                    } catch (error) {
-                        console.error('Ошибка перехода:', error);
-                        document.getElementById('favorite-items').innerHTML = `<p class="error-message">Нельзя открыть страницу: ${href}</p>`;
-                    }
+                    window.location.href = href;
                 }
             });
         });

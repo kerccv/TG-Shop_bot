@@ -175,71 +175,44 @@
         tg.ready();
         tg.expand();
 
-        let cartItems = [];
-        let favoriteItems = [];
+        const userId = tg.initDataUnsafe.user?.id || 'default';
 
-        async function saveProfile() {
+        function loadProfile() {
+            const profile = JSON.parse(localStorage.getItem(`profile_${userId}`)) || {};
+            document.getElementById('username').value = profile.username || '';
+            if (profile.avatar) {
+                document.getElementById('avatar-preview').src = profile.avatar;
+            }
+        }
+
+        function saveProfile() {
             const username = document.getElementById('username').value;
             const avatarFile = document.getElementById('avatar-upload').files[0];
+            const profile = JSON.parse(localStorage.getItem(`profile_${userId}`)) || {};
 
-            if (username || avatarFile) {
-                try {
-                    const formData = new FormData();
-                    formData.append('userId', tg.initDataUnsafe.user?.id || 'default');
-                    if (username) formData.append('username', username);
-                    if (avatarFile) formData.append('avatar', avatarFile);
-
-                    const response = await fetch('/api/profile/update', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (response.ok) {
-                        tg.showAlert('Профиль успешно обновлен!');
-                        if (avatarFile) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                document.getElementById('avatar-preview').src = e.target.result;
-                            };
-                            reader.readAsDataURL(avatarFile);
-                        }
-                    } else {
-                        const errorText = await response.text();
-                        tg.showAlert(`Ошибка при обновлении профиля: ${errorText}`);
-                    }
-                } catch (error) {
-                    console.error('Ошибка при сохранении профиля:', error);
-                    tg.showAlert('Ошибка при сохранении профиля');
-                }
+            if (username) profile.username = username;
+            if (avatarFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profile.avatar = e.target.result;
+                    document.getElementById('avatar-preview').src = e.target.result;
+                    localStorage.setItem(`profile_${userId}`, JSON.stringify(profile));
+                };
+                reader.readAsDataURL(avatarFile);
             }
+
+            localStorage.setItem(`profile_${userId}`, JSON.stringify(profile));
+            tg.showAlert('Профиль успешно сохранён!');
         }
 
-        async function updateCartCount() {
-            try {
-                const response = await fetch(`/api/cart/${tg.initDataUnsafe.user?.id || 'default'}`);
-                if (response.ok) {
-                    cartItems = await response.json();
-                    document.getElementById('cart-count').textContent = cartItems.length || 0;
-                } else {
-                    console.error('Ошибка обновления корзины:', await response.text());
-                }
-            } catch (error) {
-                console.error('Ошибка обновления корзины:', error);
-            }
+        function updateCartCount() {
+            const cartItems = JSON.parse(localStorage.getItem(`cart_${userId}`)) || [];
+            document.getElementById('cart-count').textContent = cartItems.length || 0;
         }
 
-        async function updateFavoritesCount() {
-            try {
-                const response = await fetch(`/api/favorites/${tg.initDataUnsafe.user?.id || 'default'}`);
-                if (response.ok) {
-                    favoriteItems = await response.json();
-                    document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
-                } else {
-                    console.error('Ошибка обновления избранного:', await response.text());
-                }
-            } catch (error) {
-                console.error('Ошибка обновления избранного:', error);
-            }
+        function updateFavoritesCount() {
+            const favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
+            document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
         }
 
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -249,29 +222,15 @@
                 this.classList.add('active');
                 const href = this.getAttribute('href');
                 if (href && href !== '#') {
-                    try {
-                        window.location.href = href;
-                    } catch (error) {
-                        console.error('Ошибка перехода:', error);
-                        document.getElementById('profile-container').innerHTML = `<p class="error-message">Нельзя открыть страницу: ${href}</p>`;
-                    }
+                    window.location.href = href;
                 }
             });
         });
 
         window.onload = () => {
+            loadProfile();
             updateCartCount();
             updateFavoritesCount();
-            document.getElementById('avatar-upload').addEventListener('change', function(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        document.getElementById('avatar-preview').src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
         };
     </script>
 </body>
