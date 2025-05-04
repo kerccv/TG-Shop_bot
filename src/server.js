@@ -11,6 +11,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Настройка раздачи статических файлов из папки webapp
+app.use(express.static(path.join(process.cwd(), 'webapp')));
+
+// Явные маршруты для HTML-страниц
+app.get('/', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'webapp', 'index.html'));
+});
+
+app.get('/cart.html', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'webapp', 'cart.html'));
+});
+
+app.get('/favorites.html', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'webapp', 'favorites.html'));
+});
+
+app.get('/profile.html', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'webapp', 'profile.html'));
+});
+
 // Настройка Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -19,9 +39,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Настройка Telegram Bot
 const botToken = process.env.BOT_TOKEN;
 const adminChatId = process.env.ADMIN_CHAT_ID;
-
-// Статические файлы (HTML, CSS, JS)
-app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Маршрут для получения всех продуктов
 app.get('/api/products', async (req, res) => {

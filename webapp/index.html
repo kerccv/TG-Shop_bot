@@ -390,21 +390,21 @@
     </div>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-item active" id="home-nav">
+        <a href="/" class="nav-item active" id="home-nav">
             <i class="fas fa-home"></i>
         </a>
         <a href="#" class="nav-item" id="search-nav">
             <i class="fas fa-search"></i>
         </a>
-        <a href="favorites.html" class="nav-item" id="favorites-nav">
+        <a href="/favorites.html" class="nav-item" id="favorites-nav">
             <i class="fas fa-heart"></i>
             <span class="badge" id="favorites-count">0</span>
         </a>
-        <a href="cart.html" class="nav-item" id="cart-nav">
+        <a href="/cart.html" class="nav-item" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
             <span class="badge" id="cart-count">0</span>
         </a>
-        <a href="profile.html" class="nav-item" id="profile-nav">
+        <a href="/profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
         </a>
     </nav>
@@ -424,15 +424,27 @@
 
         // Локальное хранилище через localStorage
         function loadLocalData() {
-            cartItems = JSON.parse(localStorage.getItem(`cart_${userId}`)) || [];
-            favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
-            updateCartCount();
-            updateFavoritesCount();
+            try {
+                const storedCart = localStorage.getItem(`cart_${userId}`);
+                cartItems = storedCart ? JSON.parse(storedCart) : [];
+                const storedFavorites = localStorage.getItem(`favorites_${userId}`);
+                favoriteItems = storedFavorites ? JSON.parse(storedFavorites) : [];
+                updateCartCount();
+                updateFavoritesCount();
+            } catch (error) {
+                console.error('Ошибка загрузки данных из localStorage:', error);
+                tg.showAlert('Ошибка загрузки данных. Попробуйте позже.');
+            }
         }
 
         function saveLocalData() {
-            localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
-            localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
+            try {
+                localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
+                localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
+            } catch (error) {
+                console.error('Ошибка сохранения данных в localStorage:', error);
+                tg.showAlert('Ошибка сохранения данных.');
+            }
         }
 
         async function loadProducts() {
@@ -539,7 +551,13 @@
         }
 
         function addToCart(productId, quantity) {
+            console.log(`Добавление в корзину: productId=${productId}, quantity=${quantity}`);
             const product = allProducts.find(p => p.id === productId);
+            if (!product) {
+                console.error('Товар не найден:', productId);
+                tg.showAlert('Товар не найден!');
+                return;
+            }
             const existingItem = cartItems.find(item => item.id === productId);
 
             if (existingItem) {
@@ -548,6 +566,7 @@
                 cartItems.push({ ...product, quantity: quantity || 1 });
             }
 
+            console.log('Текущая корзина:', cartItems);
             saveLocalData();
             updateCartCount();
             tg.showAlert('Товар добавлен в корзину!');
@@ -555,15 +574,20 @@
 
         function addToCartModal(productId, event) {
             event.stopPropagation();
+            console.log('Вызов addToCartModal для productId:', productId);
             addToCart(productId, 1);
         }
 
         function updateCartCount() {
-            document.getElementById('cart-count').textContent = cartItems.length || 0;
+            const count = cartItems.length || 0;
+            console.log('Обновление счётчика корзины:', count);
+            document.getElementById('cart-count').textContent = count;
         }
 
         function updateFavoritesCount() {
-            document.getElementById('favorites-count').textContent = favoriteItems.length || 0;
+            const count = favoriteItems.length || 0;
+            console.log('Обновление счётчика избранного:', count);
+            document.getElementById('favorites-count').textContent = count;
         }
 
         function openModal(product) {
@@ -633,6 +657,7 @@
         });
 
         window.onload = () => {
+            console.log('Загрузка страницы index.html');
             loadLocalData();
             loadProducts();
         };
@@ -657,7 +682,7 @@
             </div>
             <div class="modal-actions">
                 <button id="modal-favorite-btn" class="btn-favorite-modal" onclick="toggleFavorite(event)">В избранное</button>
-                <button id="modal-cart-btn" class="btn-cart-modal" onclick="addToCart(parseInt(this.dataset.id), parseInt(document.getElementById('modal-quantity-select').value))">В корзину</button>
+                <button id="modal-cart-btn" class="btn-cart-modal" onclick="addToCart(parseInt(this.dataset.id), parseInt(document.getElementById('modal-quantity-select').value)); closeModal()">В корзину</button>
             </div>
         </div>
     </div>

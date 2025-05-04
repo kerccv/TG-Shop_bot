@@ -171,21 +171,21 @@
     </div>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-item" id="home-nav">
+        <a href="/" class="nav-item" id="home-nav">
             <i class="fas fa-home"></i>
         </a>
         <a href="#" class="nav-item" id="search-nav">
             <i class="fas fa-search"></i>
         </a>
-        <a href="favorites.html" class="nav-item active" id="favorites-nav">
+        <a href="/favorites.html" class="nav-item active" id="favorites-nav">
             <i class="fas fa-heart"></i>
             <span class="badge" id="favorites-count-nav">0</span>
         </a>
-        <a href="cart.html" class="nav-item" id="cart-nav">
+        <a href="/cart.html" class="nav-item" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
             <span class="badge" id="cart-count">0</span>
         </a>
-        <a href="profile.html" class="nav-item" id="profile-nav">
+        <a href="/profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
         </a>
     </nav>
@@ -200,38 +200,49 @@
         const userId = tg.initDataUnsafe.user?.id || 'default';
 
         function loadFavorites() {
-            favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
-            const favoriteItemsContainer = document.getElementById('favorite-items');
-            favoriteItemsContainer.innerHTML = '';
-            const favoritesCount = document.getElementById('favorites-count');
-            const favoritesCountNav = document.getElementById('favorites-count-nav');
-            favoritesCount.textContent = `Товаров: ${favoriteItems.length}`;
-            favoritesCountNav.textContent = favoriteItems.length || 0;
+            try {
+                favoriteItems = JSON.parse(localStorage.getItem(`favorites_${userId}`)) || [];
+                console.log('Загруженные избранные товары:', favoriteItems);
+                const favoriteItemsContainer = document.getElementById('favorite-items');
+                favoriteItemsContainer.innerHTML = '';
+                const favoritesCount = document.getElementById('favorites-count');
+                const favoritesCountNav = document.getElementById('favorites-count-nav');
+                favoritesCount.textContent = `Товаров: ${favoriteItems.length}`;
+                favoritesCountNav.textContent = favoriteItems.length || 0;
 
-            favoriteItems.forEach(item => {
-                const favoriteItem = document.createElement('div');
-                favoriteItem.className = 'favorite-item';
-                favoriteItem.innerHTML = `
-                    <img src="${item.image_url || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
-                    <p class="favorite-name">${item.name}</p>
-                    <p class="favorite-description">${item.description || 'Описание отсутствует'}</p>
-                    <p class="favorite-price">${item.price || 0} грн</p>
-                    <button class="btn-remove" onclick="removeFromFavorites(${item.id})">Удалить</button>
-                `;
-                favoriteItem.addEventListener('click', (e) => {
-                    if (!e.target.classList.contains('btn-remove')) {
-                        tg.showAlert(`Товар: ${item.name}\nЦена: ${item.price} грн\nОписание: ${item.description}`);
-                    }
+                if (favoriteItems.length === 0) {
+                    favoriteItemsContainer.innerHTML = '<p class="error-message">Избранное пусто</p>';
+                    return;
+                }
+
+                favoriteItems.forEach(item => {
+                    const favoriteItem = document.createElement('div');
+                    favoriteItem.className = 'favorite-item';
+                    favoriteItem.innerHTML = `
+                        <img src="${item.image_url?.split(',')[0] || 'https://via.placeholder.com/150'}" alt="${item.name}" class="favorite-image">
+                        <p class="favorite-name">${item.name}</p>
+                        <p class="favorite-description">${item.description || 'Описание отсутствует'}</p>
+                        <p class="favorite-price">${item.price || 0} грн</p>
+                        <button class="btn-remove" onclick="removeFromFavorites(${item.id})">Удалить</button>
+                    `;
+                    favoriteItem.addEventListener('click', (e) => {
+                        if (!e.target.classList.contains('btn-remove')) {
+                            tg.showAlert(`Товар: ${item.name}\nЦена: ${item.price} грн\nОписание: ${item.description}`);
+                        }
+                    });
+                    favoriteItemsContainer.appendChild(favoriteItem);
                 });
-                favoriteItemsContainer.appendChild(favoriteItem);
-            });
+            } catch (error) {
+                console.error('Ошибка загрузки избранного:', error);
+                document.getElementById('favorite-items').innerHTML = '<p class="error-message">Ошибка загрузки избранного</p>';
+            }
         }
 
         function removeFromFavorites(productId) {
             favoriteItems = favoriteItems.filter(item => item.id !== productId);
             saveLocalData();
             loadFavorites();
-            tg.showAlert('Товар удален из избранного!');
+            tg.showAlert('Товар удалён из избранного!');
         }
 
         function updateCartCount() {
@@ -240,7 +251,12 @@
         }
 
         function saveLocalData() {
-            localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
+            try {
+                localStorage.setItem(`favorites_${userId}`, JSON.stringify(favoriteItems));
+            } catch (error) {
+                console.error('Ошибка сохранения избранного:', error);
+                tg.showAlert('Ошибка сохранения избранного.');
+            }
         }
 
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -256,6 +272,7 @@
         });
 
         window.onload = () => {
+            console.log('Загрузка страницы favorites.html');
             loadFavorites();
             updateCartCount();
         };

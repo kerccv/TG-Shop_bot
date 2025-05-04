@@ -316,21 +316,21 @@
     </div>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-item" id="home-nav">
+        <a href="/" class="nav-item" id="home-nav">
             <i class="fas fa-home"></i>
         </a>
         <a href="#" class="nav-item" id="search-nav">
             <i class="fas fa-search"></i>
         </a>
-        <a href="favorites.html" class="nav-item" id="favorites-nav">
+        <a href="/favorites.html" class="nav-item" id="favorites-nav">
             <i class="fas fa-heart"></i>
             <span class="badge" id="favorites-count">0</span>
         </a>
-        <a href="cart.html" class="nav-item active" id="cart-nav">
+        <a href="/cart.html" class="nav-item active" id="cart-nav">
             <i class="fas fa-shopping-cart"></i>
             <span class="badge" id="cart-count-nav">0</span>
         </a>
-        <a href="profile.html" class="nav-item" id="profile-nav">
+        <a href="/profile.html" class="nav-item" id="profile-nav">
             <i class="fas fa-user"></i>
         </a>
     </nav>
@@ -345,40 +345,54 @@
         const userId = tg.initDataUnsafe.user?.id || 'default';
 
         function loadCart() {
-            cartItems = JSON.parse(localStorage.getItem(`cart_${userId}`)) || [];
-            const cartItemsContainer = document.getElementById('cart-items');
-            cartItemsContainer.innerHTML = '';
-            const cartCount = document.getElementById('cart-count');
-            const cartCountNav = document.getElementById('cart-count-nav');
-            cartCount.textContent = `Товаров: ${cartItems.length}`;
-            cartCountNav.textContent = cartItems.length || 0;
+            try {
+                const storedCart = localStorage.getItem(`cart_${userId}`);
+                cartItems = storedCart ? JSON.parse(storedCart) : [];
+                console.log('Загруженные товары в корзине:', cartItems);
 
-            const totalPrice = cartItems.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
-            document.getElementById('total-price').textContent = `Итого: ${totalPrice} грн`;
+                const cartItemsContainer = document.getElementById('cart-items');
+                cartItemsContainer.innerHTML = '';
+                const cartCount = document.getElementById('cart-count');
+                const cartCountNav = document.getElementById('cart-count-nav');
+                cartCount.textContent = `Товаров: ${cartItems.length}`;
+                cartCountNav.textContent = cartItems.length || 0;
 
-            cartItems.forEach(item => {
-                const cartItem = document.createElement('div');
-                cartItem.className = 'cart-item';
-                cartItem.innerHTML = `
-                    <img src="${item.image_url || 'https://via.placeholder.com/150'}" alt="${item.name}" class="cart-image">
-                    <p class="cart-name">${item.name}</p>
-                    <p class="cart-description">${item.description || 'Описание отсутствует'}</p>
-                    <p class="cart-price">${item.price || 0} грн</p>
-                    <div class="cart-quantity">
-                        <label for="quantity-${item.id}">Количество:</label>
-                        <select id="quantity-${item.id}" onchange="updateCartQuantity(${item.id}, this.value)">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                        </select>
-                    </div>
-                    <button class="btn-remove" onclick="removeFromCart(${item.id})">Удалить</button>
-                `;
-                document.getElementById(`quantity-${item.id}`).value = item.quantity || 1;
-                cartItemsContainer.appendChild(cartItem);
-            });
+                const totalPrice = cartItems.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+                document.getElementById('total-price').textContent = `Итого: ${totalPrice} грн`;
+
+                if (cartItems.length === 0) {
+                    cartItemsContainer.innerHTML = '<p class="error-message">Корзина пуста</p>';
+                    return;
+                }
+
+                cartItems.forEach(item => {
+                    const cartItem = document.createElement('div');
+                    cartItem.className = 'cart-item';
+                    cartItem.innerHTML = `
+                        <img src="${item.image_url?.split(',')[0] || 'https://via.placeholder.com/150'}" alt="${item.name}" class="cart-image">
+                        <p class="cart-name">${item.name}</p>
+                        <p class="cart-description">${item.description || 'Описание отсутствует'}</p>
+                        <p class="cart-price">${item.price || 0} грн</p>
+                        <div class="cart-quantity">
+                            <label for="quantity-${item.id}">Количество:</label>
+                            <select id="quantity-${item.id}" onchange="updateCartQuantity(${item.id}, this.value)">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                        <button class="btn-remove" onclick="removeFromCart(${item.id})">Удалить</button>
+                    `;
+                    const quantitySelect = cartItem.querySelector(`#quantity-${item.id}`);
+                    quantitySelect.value = item.quantity || 1;
+                    cartItemsContainer.appendChild(cartItem);
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки корзины:', error);
+                document.getElementById('cart-items').innerHTML = '<p class="error-message">Ошибка загрузки корзины</p>';
+            }
         }
 
         function updateCartQuantity(productId, quantity) {
@@ -395,7 +409,7 @@
             cartItems = cartItems.filter(item => item.id !== productId);
             saveLocalData();
             loadCart();
-            tg.showAlert('Товар удален из корзины!');
+            tg.showAlert('Товар удалён из корзины!');
         }
 
         function updateFavoritesCount() {
@@ -494,7 +508,12 @@
         }
 
         function saveLocalData() {
-            localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
+            try {
+                localStorage.setItem(`cart_${userId}`, JSON.stringify(cartItems));
+            } catch (error) {
+                console.error('Ошибка сохранения корзины:', error);
+                tg.showAlert('Ошибка сохранения корзины.');
+            }
         }
 
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -510,6 +529,7 @@
         });
 
         window.onload = () => {
+            console.log('Загрузка страницы cart.html');
             loadCart();
             updateFavoritesCount();
         };
